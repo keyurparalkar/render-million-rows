@@ -1,5 +1,6 @@
 import { ElementRef, useEffect, useRef } from "react";
-import { drawTable } from "./utils";
+import { drawTable, writeTextInTable } from "./utils";
+import CustomerData from "./assets/customers-100.csv";
 
 function App() {
 	const canvasRef = useRef<ElementRef<"canvas">>(null);
@@ -12,18 +13,23 @@ function App() {
 
 			if (context) {
 				const rectDims = {
-					width: 80,
-					height: 40,
+					width: 100,
+					height: 50,
 				};
 
-				const canvasDims = {
-					width: 800,
-					height: 400,
-				};
+				// const canvasDims = {
+				// 	width: 800,
+				// 	height: 400,
+				// };
 
-				drawTable(context, rectDims, canvasDims);
+				drawTable(context, rectDims);
+				writeTextInTable(context, rectDims);
 			}
 		}
+	}, []);
+
+	useEffect(() => {
+		console.log({ CustomerData });
 	}, []);
 
 	return (
@@ -36,8 +42,8 @@ function App() {
 				<canvas
 					id="canvas"
 					style={{ border: "1px solid white" }}
-					width={800}
-					height={400}
+					width={1200}
+					height={600}
 					ref={canvasRef}
 				></canvas>
 			</div>

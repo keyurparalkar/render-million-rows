@@ -10,10 +10,13 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "papaparse": "^5.4.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
   "devDependencies": {
+    "@rollup/plugin-dsv": "^3.0.4",
+    "@types/papaparse": "^5.3.14",
     "@types/react": "^18.2.56",
     "@types/react-dom": "^18.2.19",
     "@typescript-eslint/eslint-plugin": "^7.0.2",

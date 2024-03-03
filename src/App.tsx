@@ -23,7 +23,7 @@ function App() {
 				// };
 
 				drawTable(context, rectDims);
-				writeTextInTable(context, rectDims);
+				writeTextInTable(context, rectDims, CustomerData);
 			}
 		}
 	}, []);
@@ -43,7 +43,7 @@ function App() {
 					id="canvas"
 					style={{ border: "1px solid white" }}
 					width={1200}
-					height={600}
+					height={5000}
 					ref={canvasRef}
 				></canvas>
 			</div>

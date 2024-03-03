@@ -16,7 +16,7 @@ export const drawTable = (
 
 	// TOOD(Keyur): Make rows and columns generation dynamic
 	context.strokeStyle = "white";
-	for (let i = 0; i < 10; i++) {
+	for (let i = 0; i < 100; i++) {
 		//rows
 		for (let j = 0; j < 12; j++) {
 			//columns
@@ -32,18 +32,28 @@ export const drawTable = (
 
 export const writeTextInTable = (
 	context: CanvasRenderingContext2D,
-	rectDims: ShapeDim
-	// allText?: Record<string, unknown>
+	rectDims: ShapeDim,
+	allText: Array<Record<string, unknown>>
 ) => {
 	context.fillStyle = "white";
-	context.font = "38px serif";
+	context.font = "18px serif";
 
-	for (let i = 0; i < 10; i++) {
+	for (let i = 0; i < 100; i++) {
 		//rows
 		for (let j = 0; j < 12; j++) {
 			//columns
+
+			const rawText = Object.values(allText[i])[j] as string;
+			const textProperties = context.measureText(rawText);
+			// console.log({ textProperties });
+
+			const truncatedText = `${rawText.slice(0, 5)}...`;
+
+			const formattedText = rawText.length >= 5 ? truncatedText : rawText;
+
 			context.fillText(
-				`C${i}${j}`,
+				// `C${i}${j}`,
+				formattedText,
 				j * rectDims.width + 20,
 				i * rectDims.height - 10
 			);

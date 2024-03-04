@@ -1,6 +1,6 @@
 import { ElementRef, useEffect, useRef } from "react";
-import { drawTable, writeTextInTable } from "./utils";
 import CustomerData from "./assets/customers-100.csv";
+import { CanvasTable } from "./Table";
 
 function App() {
 	const canvasRef = useRef<ElementRef<"canvas">>(null);
@@ -12,18 +12,26 @@ function App() {
 			const context = canvas.getContext("2d");
 
 			if (context) {
-				const rectDims = {
+				const cell = {
 					width: 100,
 					height: 50,
 				};
 
-				// const canvasDims = {
-				// 	width: 800,
-				// 	height: 400,
-				// };
+				const tableDims = {
+					rows: 100,
+					columns: 12,
+				};
 
-				drawTable(context, rectDims);
-				writeTextInTable(context, rectDims, CustomerData);
+				const table = new CanvasTable<(typeof CustomerData)[0]>(
+					context,
+					tableDims,
+					cell,
+					CustomerData
+				);
+
+				table.clearTable();
+				table.drawTable();
+				table.writeInTable();
 			}
 		}
 	}, []);
@@ -37,7 +45,7 @@ function App() {
 			<h1>A million row challenge</h1>
 			<div
 				id="table-container"
-				style={{ maxHeight: 300, overflowY: "scroll", display: "inline-block" }}
+				style={{ maxHeight: 500, overflowY: "scroll", display: "inline-block" }}
 			>
 				<canvas
 					id="canvas"

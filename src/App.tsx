@@ -13,12 +13,12 @@ function App() {
 
 			if (context) {
 				const cell = {
-					width: 100,
+					width: 150,
 					height: 50,
 				};
 
 				const tableDims = {
-					rows: 100,
+					rows: 110,
 					columns: 12,
 				};
 
@@ -36,24 +36,19 @@ function App() {
 		}
 	}, []);
 
-	useEffect(() => {
-		console.log({ CustomerData });
-	}, []);
-
 	return (
 		<>
 			<h1>A million row challenge</h1>
 			<div
 				id="table-container"
-				style={{ maxHeight: 500, overflowY: "scroll", display: "inline-block" }}
+				style={{
+					maxWidth: 1000,
+					maxHeight: 500,
+					overflow: "scroll",
+					display: "inline-block",
+				}}
 			>
-				<canvas
-					id="canvas"
-					style={{ border: "1px solid white" }}
-					width={1200}
-					height={5000}
-					ref={canvasRef}
-				></canvas>
+				<canvas id="canvas" width={1800} height={5500} ref={canvasRef}></canvas>
 			</div>
 		</>
 	);

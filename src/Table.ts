@@ -39,7 +39,6 @@ export class CanvasTable<T extends object> {
 		this.context.lineWidth = 0.2;
 
 		this.context.fillStyle = "white";
-		this.context.font = "18px serif";
 	}
 
 	drawTable() {
@@ -59,6 +58,8 @@ export class CanvasTable<T extends object> {
 		const { width, height } = this.cell;
 		const { columns } = this.tableDims;
 
+		this.context.font = "bold 18px serif";
+
 		const columnHeaders = Object.keys(this.data[0]);
 		//columns
 		for (let j = 0; j < columns; j++) {
@@ -71,6 +72,7 @@ export class CanvasTable<T extends object> {
 	writeInTable() {
 		const { width, height } = this.cell;
 		const tableData = this.data;
+
 		const dataRows = tableData.length;
 		const dataColumns = Object.keys(tableData[0]).length;
 
@@ -78,6 +80,9 @@ export class CanvasTable<T extends object> {
 
 		// This will write the header;
 		this.writeTableHeader();
+
+		// Reset the font weight, since we don't want table data to be bold;
+		this.context.font = "18px serif";
 
 		//dataRows
 		for (let i = 0; i < dataRows; i++) {

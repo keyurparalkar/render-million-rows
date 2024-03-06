@@ -52,6 +52,18 @@ export class CanvasTable<T extends object> {
 				this.context.strokeRect(j * width, i * height, width, height);
 			}
 		}
+
+		// this.context.drawImage(
+		// 	this.context.canvas,
+		// 	0,
+		// 	0,
+		// 	rows,
+		// 	columns,
+		// 	0,
+		// 	0,
+		// 	1000,
+		// 	400
+		// );
 	}
 
 	writeTableHeader() {

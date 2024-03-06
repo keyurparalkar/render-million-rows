@@ -1,6 +1,5 @@
 import { ElementRef, useEffect, useRef, useState } from "react";
 import Papa from "papaparse";
-// import CustomerData from "./assets/customers-100.csv";
 import { CanvasTable } from "./Table";
 
 type CustomerDataColumns = [
@@ -22,6 +21,7 @@ type TCustomData = Record<CustomerDataColumns[number], string>;
 
 function App() {
 	const canvasRef = useRef<ElementRef<"canvas">>(null);
+	const canvasRef1 = useRef<ElementRef<"canvas">>(null);
 	const [csvData, setCsvData] = useState<TCustomData[] | null>(null);
 	const [isLoading, setIsLoading] = useState(false);
 
@@ -40,11 +40,49 @@ function App() {
 		});
 	};
 
+	const handleOnScroll = (e: React.ChangeEvent<HTMLDivElement>) => {
+		console.log(e.target.scrollTop);
+	};
+
 	useEffect(() => {
 		const canvas = canvasRef.current;
+		const canvas1 = canvasRef1.current;
 
-		if (canvas && csvData) {
+		if (canvas && canvas1 && csvData) {
 			const context = canvas.getContext("2d");
+			const context1 = canvas1.getContext("2d");
+
+			if (context) {
+				const cell = {
+					width: 150,
+					height: 50,
+				};
+
+				const tableDims = {
+					rows: csvData.length + 100,
+					columns: 12,
+				};
+
+				const table = new CanvasTable<(typeof csvData)[0]>(
+					context,
+					tableDims,
+					cell,
+					csvData
+				);
+
+				// table.clearTable();
+				// table.drawTable();
+				// table.writeInTable();
+				context.drawImage(context1?.canvas, 0, 0, 1800, 500, 0, 0, 1800, 500);
+			}
+		}
+	}, [csvData]);
+
+	useEffect(() => {
+		const canvas1 = canvasRef1.current;
+
+		if (canvas1 && csvData) {
+			const context = canvas1.getContext("2d");
 
 			if (context) {
 				const cell = {
@@ -108,18 +146,24 @@ function App() {
 			{csvData && (
 				<div
 					id="table-container"
+					onScroll={handleOnScroll}
 					style={{
-						maxWidth: 1000,
+						maxWidth: 1200,
 						maxHeight: 500,
-						overflow: "scroll",
+						overflowY: "scroll",
 						display: "inline-block",
 					}}
 				>
-					<canvas id="canvas" width={1800} height={10500} ref={canvasRef}>
-						<span>Table</span>
-					</canvas>
+					<canvas
+						id="canvas"
+						width={1800}
+						height={500}
+						ref={canvasRef}
+					></canvas>
 				</div>
 			)}
+
+			<canvas id="canvas1" width={1800} height={5500} ref={canvasRef1}></canvas>
 		</>
 	);
 }

@@ -40,17 +40,41 @@ function App() {
 		});
 	};
 
-	const handleOnScroll = (e: React.ChangeEvent<HTMLDivElement>) => {
-		console.log(e.target.scrollTop);
+	const handleOnScroll = (e: React.UIEvent<HTMLDivElement>) => {
+		e.currentTarget.scrollTop = Math.round(e.currentTarget.scrollTop / 50) * 50;
+		const scrollTop = e.currentTarget.scrollTop;
+		// console.log(scrollTop + 500);
+		const canvas = canvasRef.current;
+		const canvas1 = canvasRef1.current;
+
+		if (canvas && canvas1) {
+			const context = canvas.getContext("2d");
+			const context1 = canvas1.getContext("2d");
+
+			if (context && context1) {
+				context.clearRect(0, 0, 1800, 500);
+
+				// Slide this image drawing such that only 5 rows are visible all the time
+				context.drawImage(
+					context1.canvas,
+					0,
+					scrollTop,
+					1800,
+					500,
+					0,
+					scrollTop,
+					1800,
+					500
+				);
+			}
+		}
 	};
 
 	useEffect(() => {
 		const canvas = canvasRef.current;
-		const canvas1 = canvasRef1.current;
 
-		if (canvas && canvas1 && csvData) {
+		if (canvas && csvData) {
 			const context = canvas.getContext("2d");
-			const context1 = canvas1.getContext("2d");
 
 			if (context) {
 				const cell = {
@@ -59,7 +83,7 @@ function App() {
 				};
 
 				const tableDims = {
-					rows: csvData.length + 100,
+					rows: 6,
 					columns: 12,
 				};
 
@@ -70,10 +94,9 @@ function App() {
 					csvData
 				);
 
-				// table.clearTable();
-				// table.drawTable();
-				// table.writeInTable();
-				context.drawImage(context1?.canvas, 0, 0, 1800, 500, 0, 0, 1800, 500);
+				table.clearTable();
+				table.drawTable();
+				table.writeInTable();
 			}
 		}
 	}, [csvData]);
@@ -149,7 +172,7 @@ function App() {
 					onScroll={handleOnScroll}
 					style={{
 						maxWidth: 1200,
-						maxHeight: 500,
+						maxHeight: 300,
 						overflowY: "scroll",
 						display: "inline-block",
 					}}

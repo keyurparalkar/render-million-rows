@@ -20,9 +20,15 @@ type CustomerDataColumns = [
 
 type TCustomData = Record<CustomerDataColumns[number], string>;
 
+const StyledContainer = styled.div`
+	position: relative;
+	overflow: hidden;
+	width: 1200px;
+	height: 300px;
+`;
 const StyledCanvasContainer = styled.div`
-	max-width: 1200px;
-	max-height: 300px;
+	width: 1200px;
+	height: 300px;
 	overflow: scroll;
 	display: inline-block;
 	position: relative;
@@ -37,6 +43,20 @@ const StyledCanvasContainer = styled.div`
 		background-color: rgba(0, 0, 0, 0.5);
 		-webkit-box-shadow: 0 0 1px rgba(255, 255, 255, 0.5);
 	}
+`;
+
+const StyledDummyVScroll = styled.div`
+	left: 1150px;
+	width: 1px;
+	height: 5000px;
+	position: absolute;
+`;
+
+const StyledCanvas = styled.canvas`
+	position: absolute;
+	top: 0px;
+	left: 0px;
+	z-index: -10;
 `;
 
 function App() {
@@ -63,7 +83,7 @@ function App() {
 	const handleOnScroll = (e: React.UIEvent<HTMLDivElement>) => {
 		e.currentTarget.scrollTop = Math.round(e.currentTarget.scrollTop / 50) * 50;
 		const scrollTop = e.currentTarget.scrollTop;
-		// console.log(scrollTop + 500);
+		console.log(scrollTop);
 		const canvas = canvasRef.current;
 		const canvas1 = canvasRef1.current;
 
@@ -80,11 +100,11 @@ function App() {
 					0,
 					scrollTop,
 					1800,
-					500,
+					300,
 					0,
-					scrollTop,
+					0,
 					1800,
-					500
+					300
 				);
 			}
 		}
@@ -187,18 +207,17 @@ function App() {
 
 			{isLoading && <span>Loading...</span>}
 			{csvData && (
-				<StyledCanvasContainer id="table-container" onScroll={handleOnScroll}>
-					<div
-						id="dummy-scrollbar-y"
-						style={{ width: 1, height: 5000, position: "absolute" }}
-					></div>
-					<canvas
+				<StyledContainer>
+					<StyledCanvasContainer id="table-container" onScroll={handleOnScroll}>
+						<StyledDummyVScroll id="dummy-scrollbar-y" />
+					</StyledCanvasContainer>
+					<StyledCanvas
 						id="canvas"
 						width={1800}
 						height={300}
 						ref={canvasRef}
-					></canvas>
-				</StyledCanvasContainer>
+					></StyledCanvas>
+				</StyledContainer>
 			)}
 
 			<canvas id="canvas1" width={1800} height={5500} ref={canvasRef1}></canvas>

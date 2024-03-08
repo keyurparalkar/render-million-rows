@@ -1,6 +1,7 @@
 import { ElementRef, useEffect, useRef, useState } from "react";
 import Papa from "papaparse";
 import { CanvasTable } from "./Table";
+import styled from "styled-components";
 
 type CustomerDataColumns = [
 	"Index",
@@ -18,6 +19,25 @@ type CustomerDataColumns = [
 ];
 
 type TCustomData = Record<CustomerDataColumns[number], string>;
+
+const StyledCanvasContainer = styled.div`
+	max-width: 1200px;
+	max-height: 300px;
+	overflow: scroll;
+	display: inline-block;
+	position: relative;
+
+	::-webkit-scrollbar {
+		-webkit-appearance: none;
+		width: 10px;
+	}
+
+	::-webkit-scrollbar-thumb {
+		border-radius: 5px;
+		background-color: rgba(0, 0, 0, 0.5);
+		-webkit-box-shadow: 0 0 1px rgba(255, 255, 255, 0.5);
+	}
+`;
 
 function App() {
 	const canvasRef = useRef<ElementRef<"canvas">>(null);
@@ -167,23 +187,18 @@ function App() {
 
 			{isLoading && <span>Loading...</span>}
 			{csvData && (
-				<div
-					id="table-container"
-					onScroll={handleOnScroll}
-					style={{
-						maxWidth: 1200,
-						maxHeight: 300,
-						overflowY: "scroll",
-						display: "inline-block",
-					}}
-				>
+				<StyledCanvasContainer id="table-container" onScroll={handleOnScroll}>
+					<div
+						id="dummy-scrollbar-y"
+						style={{ width: 1, height: 5000, position: "absolute" }}
+					></div>
 					<canvas
 						id="canvas"
 						width={1800}
-						height={500}
+						height={300}
 						ref={canvasRef}
 					></canvas>
-				</div>
+				</StyledCanvasContainer>
 			)}
 
 			<canvas id="canvas1" width={1800} height={5500} ref={canvasRef1}></canvas>

@@ -12,7 +12,8 @@
   "dependencies": {
     "papaparse": "^5.4.1",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "styled-components": "^6.1.8"
   },
   "devDependencies": {
     "@rollup/plugin-dsv": "^3.0.4",

@@ -20,15 +20,23 @@ type CustomerDataColumns = [
 
 type TCustomData = Record<CustomerDataColumns[number], string>;
 
-const StyledContainer = styled.div`
+type ContainerDims = {
+	height: number;
+	width: number;
+};
+
+type TableDims = {
+	[P in keyof ContainerDims as `$table${Capitalize<P>}`]: ContainerDims[P];
+};
+const StyledContainer = styled.div<ContainerDims>`
 	position: relative;
 	overflow: hidden;
-	width: 1200px;
-	height: 300px;
+	width: ${(props) => props.width}px;
+	height: ${(props) => props.height}px;
 `;
-const StyledCanvasContainer = styled.div`
-	width: 1200px;
-	height: 300px;
+const StyledScrollbarContainer = styled.div`
+	width: 100%;
+	height: 100%;
 	overflow: scroll;
 	display: inline-block;
 	position: relative;
@@ -45,10 +53,21 @@ const StyledCanvasContainer = styled.div`
 	}
 `;
 
-const StyledDummyVScroll = styled.div`
-	left: 1150px;
+const StyledDummyVScroll = styled.div<
+	Pick<TableDims, "$tableHeight"> & { $containerHeight: number }
+>`
+	left: ${(props) => props.$containerHeight - 50}px;
 	width: 1px;
-	height: 5000px;
+	height: ${(props) => props.$tableHeight}px;
+	position: absolute;
+`;
+
+const StyledDummyHScroll = styled.div<
+	Pick<TableDims, "$tableWidth"> & { $containerWidth: number }
+>`
+	top: ${(props) => props.$containerWidth - 20}px;
+	width: ${(props) => props.$tableWidth}px;
+	height: 1px;
 	position: absolute;
 `;
 
@@ -83,7 +102,6 @@ function App() {
 	const handleOnScroll = (e: React.UIEvent<HTMLDivElement>) => {
 		e.currentTarget.scrollTop = Math.round(e.currentTarget.scrollTop / 50) * 50;
 		const scrollTop = e.currentTarget.scrollTop;
-		console.log(scrollTop);
 		const canvas = canvasRef.current;
 		const canvas1 = canvasRef1.current;
 
@@ -207,10 +225,23 @@ function App() {
 
 			{isLoading && <span>Loading...</span>}
 			{csvData && (
-				<StyledContainer>
-					<StyledCanvasContainer id="table-container" onScroll={handleOnScroll}>
-						<StyledDummyVScroll id="dummy-scrollbar-y" />
-					</StyledCanvasContainer>
+				// TODO(Keyur): Optimize the below code with correct widths and heights that would work for any table.
+				<StyledContainer width={1200} height={300}>
+					<StyledScrollbarContainer
+						id="table-container"
+						onScroll={handleOnScroll}
+					>
+						<StyledDummyHScroll
+							id="dummy-scrollbar-x"
+							$tableWidth={12 * 150}
+							$containerWidth={300}
+						/>
+						<StyledDummyVScroll
+							id="dummy-scrollbar-y"
+							$tableHeight={50 * 100}
+							$containerHeight={1200}
+						/>
+					</StyledScrollbarContainer>
 					<StyledCanvas
 						id="canvas"
 						width={1800}

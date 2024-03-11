@@ -100,30 +100,61 @@ function App() {
 	};
 
 	const handleOnScroll = (e: React.UIEvent<HTMLDivElement>) => {
-		e.currentTarget.scrollTop = Math.round(e.currentTarget.scrollTop / 50) * 50;
+		/**
+		 * 1. Clear the first row
+		 * 2. Copy and paste the clipped table to upper position
+		 * 3. Calculate new row position
+		 * 4. Create all the rects to complete the row.
+		 * 5. Fill all the rects to complete the row
+		 */
+		// e.currentTarget.scrollTop = Math.round(e.currentTarget.scrollTop / 50) * 50;
 		const scrollTop = e.currentTarget.scrollTop;
 		const canvas = canvasRef.current;
-		const canvas1 = canvasRef1.current;
+		// const canvas1 = canvasRef1.current;
 
-		if (canvas && canvas1) {
-			const context = canvas.getContext("2d");
-			const context1 = canvas1.getContext("2d");
+		if (canvas) {
+			const context = canvas.getContext("2d", {
+				willReadFrequently: true,
+			});
+			// const context1 = canvas1.getContext("2d");
 
-			if (context && context1) {
-				context.clearRect(0, 0, 1800, 500);
-
+			console.log({ scrollTop });
+			if (context) {
 				// Slide this image drawing such that only 5 rows are visible all the time
-				context.drawImage(
-					context1.canvas,
-					0,
-					scrollTop,
-					1800,
-					300,
-					0,
-					0,
-					1800,
-					300
-				);
+				// context.drawImage(
+				// 	context1.canvas,
+				// 	0,
+				// 	scrollTop,
+				// 	1800,
+				// 	300,
+				// 	0,
+				// 	0,
+				// 	1800,
+				// 	300
+				// );
+				// 1.
+				// context.translate(0, -50);
+				// context.clearRect(0, 0, canvas.width, 50);
+				const tmp = context.getImageData(0, 50, canvas.width, canvas.height);
+
+				context.clearRect(0, 0, canvas.width, canvas.height);
+
+				// 2.
+				context.putImageData(tmp, 0, 0);
+
+				// context.strokeRect(0, canvas.height - 50, 1800, 50);
+				// // 3.
+				// const newRowPos = {
+				// 	x: 0,
+				// 	y: 250,
+				// 	w: 1800,
+				// 	h: 50,
+				// };
+				// // 4. & 5.
+				// for (let i = 0; i < 12; i++) {
+				// 	context.strokeRect(i * 150, newRowPos.y, 150, 50);
+				// 	context.fillText(`Test - ${i}`, i * 150, newRowPos.y);
+				// }
 			}
 		}
 	};
@@ -159,36 +190,36 @@ function App() {
 		}
 	}, [csvData]);
 
-	useEffect(() => {
-		const canvas1 = canvasRef1.current;
+	// useEffect(() => {
+	// 	const canvas1 = canvasRef1.current;
 
-		if (canvas1 && csvData) {
-			const context = canvas1.getContext("2d");
+	// 	if (canvas1 && csvData) {
+	// 		const context = canvas1.getContext("2d");
 
-			if (context) {
-				const cell = {
-					width: 150,
-					height: 50,
-				};
+	// 		if (context) {
+	// 			const cell = {
+	// 				width: 150,
+	// 				height: 50,
+	// 			};
 
-				const tableDims = {
-					rows: csvData.length + 100,
-					columns: 12,
-				};
+	// 			const tableDims = {
+	// 				rows: csvData.length + 100,
+	// 				columns: 12,
+	// 			};
 
-				const table = new CanvasTable<(typeof csvData)[0]>(
-					context,
-					tableDims,
-					cell,
-					csvData
-				);
+	// 			const table = new CanvasTable<(typeof csvData)[0]>(
+	// 				context,
+	// 				tableDims,
+	// 				cell,
+	// 				csvData
+	// 			);
 
-				table.clearTable();
-				table.drawTable();
-				table.writeInTable();
-			}
-		}
-	}, [csvData]);
+	// 			table.clearTable();
+	// 			table.drawTable();
+	// 			table.writeInTable();
+	// 		}
+	// 	}
+	// }, [csvData]);
 
 	return (
 		<>
@@ -251,7 +282,7 @@ function App() {
 				</StyledContainer>
 			)}
 
-			<canvas id="canvas1" width={1800} height={5500} ref={canvasRef1}></canvas>
+			{/* <canvas id="canvas1" width={1800} height={5500} ref={canvasRef1}></canvas> */}
 		</>
 	);
 }

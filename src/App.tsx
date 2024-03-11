@@ -29,6 +29,14 @@ type ContainerDims = {
 type TableDims = {
 	[P in keyof ContainerDims as `$table${Capitalize<P>}`]: ContainerDims[P];
 };
+
+type TCanvasConfig = {
+	index: number;
+	start: number;
+	end: number;
+	canvas: OffscreenCanvas;
+};
+
 const StyledContainer = styled.div<ContainerDims>`
 	position: relative;
 	overflow: hidden;
@@ -83,12 +91,15 @@ function App() {
 	const canvasRef = useRef<ElementRef<"canvas">>(null);
 	const [csvData, setCsvData] = useState<TCustomData[] | null>(null);
 	const [isLoading, setIsLoading] = useState(false);
-	const offScreenRef = useRef<OffscreenCanvas | null>(null);
+	const offScreenRef = useRef<TCanvasConfig[] | []>([]);
+	const [dataStartLimit, setDataStartLimit] = useState(0);
+	const [dataEndLimit, setDataEndLimit] = useState(100);
 
 	const handleClick = (url: string) => {
 		setIsLoading(true);
 
 		Papa.parse<TCustomData>(url, {
+			worker: true,
 			download: true,
 			header: true,
 			skipEmptyLines: true,
@@ -103,6 +114,26 @@ function App() {
 	const handleOnScroll = (e: React.UIEvent<HTMLDivElement>) => {
 		const scrollTop = e.currentTarget.scrollTop;
 		const canvas = canvasRef.current;
+		const end = dataEndLimit;
+		/**
+		 * When the scroll top reaches the 90% of the end limit of dataSetLimits then we increment it by 5000
+		 */
+		const trunScrollTop = Math.trunc(scrollTop / 50);
+		if (trunScrollTop >= 0.9 * end) {
+			setDataStartLimit(dataStartLimit + 100);
+			setDataEndLimit(dataEndLimit + 100);
+		}
+
+		const currentCanvasConfig = offScreenRef.current.filter(
+			(item) => trunScrollTop >= item.start && trunScrollTop <= item.end
+		)[0];
+
+		const lastScrollOffset =
+			currentCanvasConfig.start === 0
+				? 0
+				: (currentCanvasConfig.end - currentCanvasConfig.start) *
+				  DEFAULT_CELL_DIMS.height *
+				  currentCanvasConfig.index;
 
 		if (canvas) {
 			const context = canvas.getContext("2d");
@@ -112,9 +143,9 @@ function App() {
 
 				// TODO(Keyur): Solve the problem of canvas redrawing at the same location on mount;
 				context.drawImage(
-					offScreenRef.current,
+					currentCanvasConfig.canvas,
 					0,
-					scrollTop,
+					scrollTop - lastScrollOffset,
 					1800,
 					300,
 					0,
@@ -154,14 +185,24 @@ function App() {
 
 	useEffect(() => {
 		if (csvData) {
+			// lastScrollOffset.current = 5000;
+			// const [start, end] = dataSetLimits.current;
+			const start = dataStartLimit;
+			const end = dataEndLimit;
+
+			// Create the slice of csvData:
+			const slicedData = csvData.slice(start, end);
+			console.log({ start, end, slicedData });
+
+			// We create slices of Offscreen canvas of size 5000
 			const backupCanvas = new OffscreenCanvas(
 				1800,
-				csvData.length * DEFAULT_CELL_DIMS.height
+				100 * DEFAULT_CELL_DIMS.height
 			);
 			const bContext = backupCanvas.getContext("2d");
 
 			const tableDims = {
-				rows: csvData.length,
+				rows: slicedData.length,
 				columns: DEFAULT_COLUMN_LENGTH,
 			};
 
@@ -170,17 +211,30 @@ function App() {
 					bContext,
 					tableDims,
 					DEFAULT_CELL_DIMS,
-					csvData
+					slicedData
 				);
 
 				table.clearTable();
 				table.drawTable();
 				table.writeInTable();
-				offScreenRef.current = backupCanvas;
+				offScreenRef.current = [
+					...offScreenRef.current,
+					{
+						index:
+							offScreenRef.current.length > 0
+								? offScreenRef.current[offScreenRef.current.length - 1].index +
+								  1
+								: 0,
+						start,
+						end,
+						canvas: backupCanvas,
+					},
+				];
 			}
 		}
-	}, [csvData]);
+	}, [csvData, dataStartLimit, dataEndLimit]);
 
+	console.log({ start: dataStartLimit, end: dataEndLimit });
 	return (
 		<>
 			<h1>A million row challenge</h1>
@@ -229,7 +283,7 @@ function App() {
 						/>
 						<StyledDummyVScroll
 							id="dummy-scrollbar-y"
-							$tableHeight={50 * csvData.length}
+							$tableHeight={DEFAULT_CELL_DIMS.height * csvData.length}
 							$containerHeight={1200}
 						/>
 					</StyledScrollbarContainer>

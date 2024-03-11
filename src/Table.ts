@@ -18,13 +18,13 @@ type TableData<T extends object> = Array<T>;
  */
 
 export class CanvasTable<T extends object> {
-	context: CanvasRenderingContext2D;
+	context: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
 	tableDims: TableDims;
 	cell: Cell;
 	data: TableData<T>;
 
 	constructor(
-		context: CanvasRenderingContext2D,
+		context: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D,
 		tableDims: TableDims,
 		cell: Cell,
 		data: TableData<T>
@@ -127,7 +127,5 @@ export class CanvasTable<T extends object> {
 				this.context.clearRect(j * width, i * height, width, height);
 			}
 		}
-
-		this.drawTable();
 	}
 }

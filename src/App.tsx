@@ -2,6 +2,7 @@ import { ElementRef, useEffect, useRef, useState } from "react";
 import Papa from "papaparse";
 import { CanvasTable } from "./Table";
 import styled from "styled-components";
+import { DEFAULT_CELL_DIMS, DEFAULT_COLUMN_LENGTH } from "./constants";
 
 type CustomerDataColumns = [
 	"Index",
@@ -80,9 +81,9 @@ const StyledCanvas = styled.canvas`
 
 function App() {
 	const canvasRef = useRef<ElementRef<"canvas">>(null);
-	const canvasRef1 = useRef<ElementRef<"canvas">>(null);
 	const [csvData, setCsvData] = useState<TCustomData[] | null>(null);
 	const [isLoading, setIsLoading] = useState(false);
+	const offScreenRef = useRef<OffscreenCanvas | null>(null);
 
 	const handleClick = (url: string) => {
 		setIsLoading(true);
@@ -100,21 +101,18 @@ function App() {
 	};
 
 	const handleOnScroll = (e: React.UIEvent<HTMLDivElement>) => {
-		e.currentTarget.scrollTop = Math.round(e.currentTarget.scrollTop / 50) * 50;
 		const scrollTop = e.currentTarget.scrollTop;
 		const canvas = canvasRef.current;
-		const canvas1 = canvasRef1.current;
 
-		if (canvas && canvas1) {
+		if (canvas) {
 			const context = canvas.getContext("2d");
-			const context1 = canvas1.getContext("2d");
 
-			if (context && context1) {
-				context.clearRect(0, 0, 1800, 500);
+			if (context && offScreenRef.current) {
+				context.clearRect(0, 0, 1800, 300);
 
-				// Slide this image drawing such that only 5 rows are visible all the time
+				// TODO(Keyur): Solve the problem of canvas redrawing at the same location on mount;
 				context.drawImage(
-					context1.canvas,
+					offScreenRef.current,
 					0,
 					scrollTop,
 					1800,
@@ -135,20 +133,15 @@ function App() {
 			const context = canvas.getContext("2d");
 
 			if (context) {
-				const cell = {
-					width: 150,
-					height: 50,
-				};
-
 				const tableDims = {
 					rows: 6,
-					columns: 12,
+					columns: DEFAULT_COLUMN_LENGTH,
 				};
 
 				const table = new CanvasTable<(typeof csvData)[0]>(
 					context,
 					tableDims,
-					cell,
+					DEFAULT_CELL_DIMS,
 					csvData
 				);
 
@@ -160,32 +153,30 @@ function App() {
 	}, [csvData]);
 
 	useEffect(() => {
-		const canvas1 = canvasRef1.current;
+		if (csvData) {
+			const backupCanvas = new OffscreenCanvas(
+				1800,
+				csvData.length * DEFAULT_CELL_DIMS.height
+			);
+			const bContext = backupCanvas.getContext("2d");
 
-		if (canvas1 && csvData) {
-			const context = canvas1.getContext("2d");
+			const tableDims = {
+				rows: csvData.length,
+				columns: DEFAULT_COLUMN_LENGTH,
+			};
 
-			if (context) {
-				const cell = {
-					width: 150,
-					height: 50,
-				};
-
-				const tableDims = {
-					rows: csvData.length + 100,
-					columns: 12,
-				};
-
+			if (bContext) {
 				const table = new CanvasTable<(typeof csvData)[0]>(
-					context,
+					bContext,
 					tableDims,
-					cell,
+					DEFAULT_CELL_DIMS,
 					csvData
 				);
 
 				table.clearTable();
 				table.drawTable();
 				table.writeInTable();
+				offScreenRef.current = backupCanvas;
 			}
 		}
 	}, [csvData]);
@@ -233,12 +224,12 @@ function App() {
 					>
 						<StyledDummyHScroll
 							id="dummy-scrollbar-x"
-							$tableWidth={12 * 150}
+							$tableWidth={DEFAULT_COLUMN_LENGTH * 150}
 							$containerWidth={300}
 						/>
 						<StyledDummyVScroll
 							id="dummy-scrollbar-y"
-							$tableHeight={50 * 100}
+							$tableHeight={50 * csvData.length}
 							$containerHeight={1200}
 						/>
 					</StyledScrollbarContainer>
@@ -250,8 +241,6 @@ function App() {
 					></StyledCanvas>
 				</StyledContainer>
 			)}
-
-			<canvas id="canvas1" width={1800} height={5500} ref={canvasRef1}></canvas>
 		</>
 	);
 }

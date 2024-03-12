@@ -268,42 +268,45 @@ function App() {
 			// Create the slice of csvData:
 			const slicedData = csvData.slice(start, end);
 
-			// We create slices of Offscreen canvas of size 5000
-			const backupCanvas = new OffscreenCanvas(
-				1800,
-				100 * DEFAULT_CELL_DIMS.height
-			);
-			const bContext = backupCanvas.getContext("2d");
-
-			const tableDims = {
-				rows: slicedData.length,
-				columns: DEFAULT_COLUMN_LENGTH,
-			};
-
-			if (bContext) {
-				const table = new CanvasTable<(typeof csvData)[0]>(
-					bContext,
-					tableDims,
-					DEFAULT_CELL_DIMS,
-					slicedData
+			// While creating next offscreen canvas if the data is not available bail out:
+			if (slicedData.length !== 0) {
+				// We create slices of Offscreen canvas of size 5000
+				const backupCanvas = new OffscreenCanvas(
+					1800,
+					100 * DEFAULT_CELL_DIMS.height
 				);
+				const bContext = backupCanvas.getContext("2d");
 
-				table.clearTable();
-				table.drawTable();
-				table.writeInTable();
-				offScreenRef.current = [
-					...offScreenRef.current,
-					{
-						index:
-							offScreenRef.current.length > 0
-								? offScreenRef.current[offScreenRef.current.length - 1].index +
-								  1
-								: 0,
-						start,
-						end,
-						canvas: backupCanvas,
-					},
-				];
+				const tableDims = {
+					rows: slicedData.length,
+					columns: DEFAULT_COLUMN_LENGTH,
+				};
+
+				if (bContext) {
+					const table = new CanvasTable<(typeof csvData)[0]>(
+						bContext,
+						tableDims,
+						DEFAULT_CELL_DIMS,
+						slicedData
+					);
+
+					table.clearTable();
+					table.drawTable();
+					table.writeInTable();
+					offScreenRef.current = [
+						...offScreenRef.current,
+						{
+							index:
+								offScreenRef.current.length > 0
+									? offScreenRef.current[offScreenRef.current.length - 1]
+											.index + 1
+									: 0,
+							start,
+							end,
+							canvas: backupCanvas,
+						},
+					];
+				}
 			}
 		}
 	}, [csvData, dataStartLimit, dataEndLimit]);
@@ -337,8 +340,24 @@ function App() {
 				>
 					Load 0.5M rows
 				</button>
-				<button>Load 1M rows</button>
-				<button>Load 2M rows</button>
+				<button
+					onClick={() =>
+						handleClick(
+							"https://dl.dropboxusercontent.com/scl/fi/qjnzwwal9mtfroiyd5gf4/customers-1000000.csv?rlkey=3izklijvilv0kxmpvjdhehgy1&dl=0"
+						)
+					}
+				>
+					Load 1M rows
+				</button>
+				<button
+					onClick={() =>
+						handleClick(
+							"https://dl.dropboxusercontent.com/scl/fi/sm3jnihtkl6uevo6rsy9s/customers-2000000.csv?rlkey=vey9u644vs0i8zjutdxdol31x&dl=0"
+						)
+					}
+				>
+					Load 2M rows
+				</button>
 			</div>
 
 			{isLoading && <span>Loading...</span>}

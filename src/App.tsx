@@ -155,7 +155,7 @@ function App() {
 			const context = canvas.getContext("2d");
 
 			if (context && offScreenRef.current) {
-				context.clearRect(0, 0, 1800, 500);
+				context.clearRect(0, 0, 1800, 1000);
 
 				// TODO(Keyur): Solve the problem of canvas redrawing at the same location on mount;
 				context.drawImage(
@@ -163,15 +163,15 @@ function App() {
 					0,
 					scrollTop - lastScrollOffset,
 					1800,
-					500,
+					1000,
 					0,
 					0,
 					1800,
-					500
+					1000
 				);
 
 				if (
-					scrollTop + 500 >= currentCanvasConfig.canvas.height &&
+					scrollTop + 1000 >= currentCanvasConfig.canvas.height &&
 					offScreenRef.current[currentCanvasConfig.index + 1]
 				) {
 					const diffRegion = {
@@ -180,20 +180,20 @@ function App() {
 						sw: currentCanvasConfig.canvas.width,
 						sh:
 							scrollTop +
-							500 -
+							1000 -
 							currentCanvasConfig.canvas.height *
 								(currentCanvasConfig.index + 1),
 						dx: 0,
 						dy:
-							500 -
+							1000 -
 							(scrollTop +
-								500 -
+								1000 -
 								currentCanvasConfig.canvas.height *
 									(currentCanvasConfig.index + 1)),
 						dw: currentCanvasConfig.canvas.width,
 						dh:
 							scrollTop +
-							500 -
+							1000 -
 							currentCanvasConfig.canvas.height *
 								(currentCanvasConfig.index + 1),
 					};
@@ -237,12 +237,13 @@ function App() {
 			}
 		}
 
+		// Effect that paints rows on data load
 		if (canvas && csvData) {
 			const context = canvas.getContext("2d");
 
 			if (context) {
 				const tableDims = {
-					rows: 10,
+					rows: 20,
 					columns: DEFAULT_COLUMN_LENGTH,
 				};
 
@@ -261,6 +262,7 @@ function App() {
 		}
 	}, [csvData]);
 
+	// Effect that generates new offscreencanvas slice
 	useEffect(() => {
 		if (csvData) {
 			const start = dataStartLimit;
@@ -365,7 +367,7 @@ function App() {
 			{csvData && (
 				// TODO(Keyur): Optimize the below code with correct widths and heights that would work for any table.
 				<>
-					<StyledContainer width={1200} height={500 + DEFAULT_HEADER_HEIGHT}>
+					<StyledContainer width={2000} height={1000 + DEFAULT_HEADER_HEIGHT}>
 						<StyledScrollbarContainer
 							id="table-container"
 							onScroll={handleOnScroll}
@@ -381,7 +383,7 @@ function App() {
 									DEFAULT_HEADER_HEIGHT +
 									DEFAULT_CELL_DIMS.height * csvData.length
 								}
-								$containerHeight={1200}
+								$containerHeight={1800}
 							/>
 						</StyledScrollbarContainer>
 						<StyledCanvas
@@ -393,7 +395,7 @@ function App() {
 						<StyledCanvas
 							id="canvas"
 							width={1800}
-							height={500}
+							height={1000}
 							ref={canvasRef}
 						></StyledCanvas>
 					</StyledContainer>

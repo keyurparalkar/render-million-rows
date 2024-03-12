@@ -119,7 +119,8 @@ function App() {
 		 * When the scroll top reaches the 90% of the end limit of dataSetLimits then we increment it by 5000
 		 */
 		const trunScrollTop = Math.trunc(scrollTop / 50);
-		if (trunScrollTop >= 0.9 * end) {
+
+		if (trunScrollTop >= 0.8 * end) {
 			setDataStartLimit(dataStartLimit + 100);
 			setDataEndLimit(dataEndLimit + 100);
 		}
@@ -135,11 +136,17 @@ function App() {
 				  DEFAULT_CELL_DIMS.height *
 				  currentCanvasConfig.index;
 
+		console.log({
+			scrollTop,
+			currentCanvasIndex: currentCanvasConfig.index,
+			lastScrollOffset,
+		});
+
 		if (canvas) {
 			const context = canvas.getContext("2d");
 
 			if (context && offScreenRef.current) {
-				context.clearRect(0, 0, 1800, 300);
+				context.clearRect(0, 0, 1800, 500);
 
 				// TODO(Keyur): Solve the problem of canvas redrawing at the same location on mount;
 				context.drawImage(
@@ -147,12 +154,53 @@ function App() {
 					0,
 					scrollTop - lastScrollOffset,
 					1800,
-					300,
+					500,
 					0,
 					0,
 					1800,
-					300
+					500
 				);
+
+				if (
+					scrollTop + 500 >= currentCanvasConfig.canvas.height &&
+					offScreenRef.current[currentCanvasConfig.index + 1]
+				) {
+					const diffRegion = {
+						sx: 0,
+						sy: 0,
+						sw: currentCanvasConfig.canvas.width,
+						sh:
+							scrollTop +
+							500 -
+							currentCanvasConfig.canvas.height *
+								(currentCanvasConfig.index + 1),
+						dx: 0,
+						dy:
+							500 -
+							(scrollTop +
+								500 -
+								currentCanvasConfig.canvas.height *
+									(currentCanvasConfig.index + 1)),
+						dw: currentCanvasConfig.canvas.width,
+						dh:
+							scrollTop +
+							500 -
+							currentCanvasConfig.canvas.height *
+								(currentCanvasConfig.index + 1),
+					};
+
+					context.drawImage(
+						offScreenRef.current[currentCanvasConfig.index + 1].canvas,
+						diffRegion.sx,
+						diffRegion.sy,
+						diffRegion.sw,
+						diffRegion.sh,
+						diffRegion.dx,
+						diffRegion.dy,
+						diffRegion.dw,
+						diffRegion.dh
+					);
+				}
 			}
 		}
 	};
@@ -165,7 +213,7 @@ function App() {
 
 			if (context) {
 				const tableDims = {
-					rows: 6,
+					rows: 10,
 					columns: DEFAULT_COLUMN_LENGTH,
 				};
 
@@ -178,6 +226,7 @@ function App() {
 
 				table.clearTable();
 				table.drawTable();
+				table.writeTableHeader();
 				table.writeInTable();
 			}
 		}
@@ -185,14 +234,11 @@ function App() {
 
 	useEffect(() => {
 		if (csvData) {
-			// lastScrollOffset.current = 5000;
-			// const [start, end] = dataSetLimits.current;
 			const start = dataStartLimit;
 			const end = dataEndLimit;
 
 			// Create the slice of csvData:
 			const slicedData = csvData.slice(start, end);
-			console.log({ start, end, slicedData });
 
 			// We create slices of Offscreen canvas of size 5000
 			const backupCanvas = new OffscreenCanvas(
@@ -234,7 +280,6 @@ function App() {
 		}
 	}, [csvData, dataStartLimit, dataEndLimit]);
 
-	console.log({ start: dataStartLimit, end: dataEndLimit });
 	return (
 		<>
 			<h1>A million row challenge</h1>
@@ -271,29 +316,31 @@ function App() {
 			{isLoading && <span>Loading...</span>}
 			{csvData && (
 				// TODO(Keyur): Optimize the below code with correct widths and heights that would work for any table.
-				<StyledContainer width={1200} height={300}>
-					<StyledScrollbarContainer
-						id="table-container"
-						onScroll={handleOnScroll}
-					>
-						<StyledDummyHScroll
-							id="dummy-scrollbar-x"
-							$tableWidth={DEFAULT_COLUMN_LENGTH * 150}
-							$containerWidth={300}
-						/>
-						<StyledDummyVScroll
-							id="dummy-scrollbar-y"
-							$tableHeight={DEFAULT_CELL_DIMS.height * csvData.length}
-							$containerHeight={1200}
-						/>
-					</StyledScrollbarContainer>
-					<StyledCanvas
-						id="canvas"
-						width={1800}
-						height={300}
-						ref={canvasRef}
-					></StyledCanvas>
-				</StyledContainer>
+				<>
+					<StyledContainer width={1200} height={500}>
+						<StyledScrollbarContainer
+							id="table-container"
+							onScroll={handleOnScroll}
+						>
+							<StyledDummyHScroll
+								id="dummy-scrollbar-x"
+								$tableWidth={DEFAULT_COLUMN_LENGTH * 150}
+								$containerWidth={300}
+							/>
+							<StyledDummyVScroll
+								id="dummy-scrollbar-y"
+								$tableHeight={DEFAULT_CELL_DIMS.height * csvData.length}
+								$containerHeight={1200}
+							/>
+						</StyledScrollbarContainer>
+						<StyledCanvas
+							id="canvas"
+							width={1800}
+							height={500}
+							ref={canvasRef}
+						></StyledCanvas>
+					</StyledContainer>
+				</>
 			)}
 		</>
 	);

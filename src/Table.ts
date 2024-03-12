@@ -90,9 +90,6 @@ export class CanvasTable<T extends object> {
 
 		let gridStartRow = 2;
 
-		// This will write the header;
-		this.writeTableHeader();
-
 		// Reset the font weight, since we don't want table data to be bold;
 		this.context.font = "18px serif";
 

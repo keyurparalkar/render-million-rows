@@ -2,9 +2,13 @@ import { ElementRef, useEffect, useRef, useState } from "react";
 import Papa from "papaparse";
 import { CanvasTable } from "./Table";
 import styled from "styled-components";
-import { DEFAULT_CELL_DIMS, DEFAULT_COLUMN_LENGTH } from "./constants";
+import {
+	DEFAULT_CELL_DIMS,
+	DEFAULT_COLUMN_LENGTH,
+	DEFAULT_HEADER_HEIGHT,
+} from "./constants";
 
-type CustomerDataColumns = [
+const CustomerDataColumns = [
 	"Index",
 	"Customer Id",
 	"First Name",
@@ -16,10 +20,10 @@ type CustomerDataColumns = [
 	"Phone 2",
 	"Email",
 	"Subscription Date",
-	"Website"
-];
+	"Website",
+] as const;
 
-type TCustomData = Record<CustomerDataColumns[number], string>;
+type TCustomData = Record<(typeof CustomerDataColumns)[number], string>;
 
 type ContainerDims = {
 	height: number;
@@ -81,14 +85,21 @@ const StyledDummyHScroll = styled.div<
 `;
 
 const StyledCanvas = styled.canvas`
+	&#header-canvas {
+		top: 0px;
+	}
+
+	&#canvas {
+		top: ${DEFAULT_HEADER_HEIGHT}px;
+	}
 	position: absolute;
-	top: 0px;
 	left: 0px;
 	z-index: -10;
 `;
 
 function App() {
 	const canvasRef = useRef<ElementRef<"canvas">>(null);
+	const headerCanvasRef = useRef<ElementRef<"canvas">>(null);
 	const [csvData, setCsvData] = useState<TCustomData[] | null>(null);
 	const [isLoading, setIsLoading] = useState(false);
 	const offScreenRef = useRef<TCanvasConfig[] | []>([]);
@@ -112,7 +123,10 @@ function App() {
 	};
 
 	const handleOnScroll = (e: React.UIEvent<HTMLDivElement>) => {
-		const scrollTop = e.currentTarget.scrollTop;
+		const scrollTop =
+			e.currentTarget.scrollTop === 0
+				? 0
+				: e.currentTarget.scrollTop - DEFAULT_HEADER_HEIGHT;
 		const canvas = canvasRef.current;
 		const end = dataEndLimit;
 		/**
@@ -201,6 +215,25 @@ function App() {
 
 	useEffect(() => {
 		const canvas = canvasRef.current;
+		const headerCanvas = headerCanvasRef.current;
+
+		if (headerCanvas) {
+			const headerContext = headerCanvas.getContext("2d");
+			const { width, height } = DEFAULT_CELL_DIMS;
+			const colNames = CustomerDataColumns;
+
+			if (headerContext) {
+				headerContext.strokeStyle = "white";
+				headerContext.font = "bold 18px serif";
+				headerContext.fillStyle = "white";
+
+				for (let i = 0; i < DEFAULT_COLUMN_LENGTH; i++) {
+					headerContext.fillRect(i * width, 0, width, height);
+					headerContext.fillStyle = "black";
+					headerContext.fillText(colNames[i], i * width + 20, height - 10);
+				}
+			}
+		}
 
 		if (canvas && csvData) {
 			const context = canvas.getContext("2d");
@@ -220,7 +253,7 @@ function App() {
 
 				table.clearTable();
 				table.drawTable();
-				table.writeTableHeader();
+				// table.writeTableHeader();
 				table.writeInTable();
 			}
 		}
@@ -311,7 +344,7 @@ function App() {
 			{csvData && (
 				// TODO(Keyur): Optimize the below code with correct widths and heights that would work for any table.
 				<>
-					<StyledContainer width={1200} height={500}>
+					<StyledContainer width={1200} height={500 + DEFAULT_HEADER_HEIGHT}>
 						<StyledScrollbarContainer
 							id="table-container"
 							onScroll={handleOnScroll}
@@ -323,10 +356,19 @@ function App() {
 							/>
 							<StyledDummyVScroll
 								id="dummy-scrollbar-y"
-								$tableHeight={DEFAULT_CELL_DIMS.height * csvData.length}
+								$tableHeight={
+									DEFAULT_HEADER_HEIGHT +
+									DEFAULT_CELL_DIMS.height * csvData.length
+								}
 								$containerHeight={1200}
 							/>
 						</StyledScrollbarContainer>
+						<StyledCanvas
+							id="header-canvas"
+							width={1800}
+							height={50}
+							ref={headerCanvasRef}
+						></StyledCanvas>
 						<StyledCanvas
 							id="canvas"
 							width={1800}

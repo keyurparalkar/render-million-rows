@@ -225,11 +225,12 @@ function App() {
 			if (headerContext) {
 				headerContext.strokeStyle = "white";
 				headerContext.font = "bold 18px serif";
-				headerContext.fillStyle = "white";
 
 				for (let i = 0; i < DEFAULT_COLUMN_LENGTH; i++) {
+					headerContext.fillStyle = "#242424";
 					headerContext.fillRect(i * width, 0, width, height);
-					headerContext.fillStyle = "black";
+					headerContext.fillStyle = "white";
+					headerContext.strokeRect(i * width, 0, width, height);
 					headerContext.fillText(colNames[i], i * width + 20, height - 10);
 				}
 			}

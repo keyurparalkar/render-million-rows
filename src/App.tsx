@@ -6,6 +6,7 @@ import {
 	DEFAULT_CELL_DIMS,
 	DEFAULT_COLUMN_LENGTH,
 	DEFAULT_HEADER_HEIGHT,
+	DEFAULT_SLICE_THRESHOLD,
 } from "./constants";
 
 const CustomerDataColumns = [
@@ -104,7 +105,7 @@ function App() {
 	const [isLoading, setIsLoading] = useState(false);
 	const offScreenRef = useRef<TCanvasConfig[] | []>([]);
 	const [dataStartLimit, setDataStartLimit] = useState(0);
-	const [dataEndLimit, setDataEndLimit] = useState(100);
+	const [dataEndLimit, setDataEndLimit] = useState(DEFAULT_SLICE_THRESHOLD);
 
 	const handleClick = (url: string) => {
 		setIsLoading(true);
@@ -135,8 +136,8 @@ function App() {
 		const trunScrollTop = Math.trunc(scrollTop / 50);
 
 		if (trunScrollTop >= 0.8 * end) {
-			setDataStartLimit(dataStartLimit + 100);
-			setDataEndLimit(dataEndLimit + 100);
+			setDataStartLimit(dataStartLimit + DEFAULT_SLICE_THRESHOLD);
+			setDataEndLimit(dataEndLimit + DEFAULT_SLICE_THRESHOLD);
 		}
 
 		const currentCanvasConfig = offScreenRef.current.filter(
@@ -273,7 +274,7 @@ function App() {
 				// We create slices of Offscreen canvas of size 5000
 				const backupCanvas = new OffscreenCanvas(
 					1800,
-					100 * DEFAULT_CELL_DIMS.height
+					DEFAULT_SLICE_THRESHOLD * DEFAULT_CELL_DIMS.height
 				);
 				const bContext = backupCanvas.getContext("2d");
 

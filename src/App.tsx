@@ -136,12 +136,6 @@ function App() {
 				  DEFAULT_CELL_DIMS.height *
 				  currentCanvasConfig.index;
 
-		console.log({
-			scrollTop,
-			currentCanvasIndex: currentCanvasConfig.index,
-			lastScrollOffset,
-		});
-
 		if (canvas) {
 			const context = canvas.getContext("2d");
 

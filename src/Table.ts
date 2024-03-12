@@ -88,7 +88,7 @@ export class CanvasTable<T extends object> {
 		const dataRows = tableData.length;
 		const dataColumns = Object.keys(tableData[0]).length;
 
-		let gridStartRow = 2;
+		let gridStartRow = 1;
 
 		// Reset the font weight, since we don't want table data to be bold;
 		this.context.font = "18px serif";

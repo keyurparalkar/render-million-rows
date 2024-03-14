@@ -103,6 +103,7 @@ function App() {
 	const handleClick = (url: string) => {
 		setIsLoading(true);
 
+		// Download the data on click
 		Papa.parse<TCustomData>(url, {
 			worker: true,
 			download: true,
@@ -148,6 +149,12 @@ function App() {
 		}
 	};
 
+	/**
+	 * This effect runs when the downloaded data becomes available.
+	 * It has the following purpose:
+	 * 1. Draw the table header on #header-canvas
+	 * 2. Transfer the control to the worker
+	 */
 	useEffect(() => {
 		const canvas = canvasRef.current;
 		const headerCanvas = headerCanvasRef.current;
@@ -172,8 +179,9 @@ function App() {
 		}
 
 		/**
-		 * Once the data is loaded we transfer this data to worker.
-		 * We also transfer the main table canvas to the worker;
+		 * We transfer two things here:
+		 * 1. We convert our #canvas that draws the actual table to an offscreen canvas
+		 * 2. We use the transfer the above canvas to the worker via postMessage
 		 */
 		if (workerRef.current && csvData && canvas) {
 			const mainOffscreenCanvas = canvas.transferControlToOffscreen();
@@ -188,13 +196,13 @@ function App() {
 		}
 	}, [csvData]);
 
+	/**
+	 * On component mount, initialze the worker.
+	 */
 	useEffect(() => {
 		if (window.Worker) {
+			// Refer to the Vite's Query Suffix syntax for loading your custom worker: https://vitejs.dev/guide/features.html#import-with-query-suffixes
 			const worker = new CustomWorker();
-			worker.onmessage = (e) => {
-				console.log("Recieved Msg from worker = ", e);
-			};
-
 			workerRef.current = worker;
 		}
 	}, []);
@@ -250,13 +258,17 @@ function App() {
 
 			{isLoading && <span>Loading...</span>}
 			{csvData && (
-				// TODO(Keyur): Optimize the below code with correct widths and heights that would work for any table.
 				<>
+					{/* Below is a div that serves as container with infinite scroll.
+						We manually assign the width and height to this container and make the content overflow in it by create huge divs. */}
 					<StyledContainer width={2000} height={1000 + DEFAULT_HEADER_HEIGHT}>
 						<StyledScrollbarContainer
 							id="table-container"
 							onScroll={handleOnScroll}
 						>
+							{/* Below are the dummy divs of width 1px but whos length is equal to the # of rows and columns in the data.
+							This helps us to bring in the scrollbars equal to the rows and columns of the data.
+							So effectively we have scrollHeight = DEFAULT_HEADER + ROWs + ROW_LENGTH. */}
 							<StyledDummyHScroll
 								id="dummy-scrollbar-x"
 								$tableWidth={DEFAULT_COLUMN_LENGTH * 150}

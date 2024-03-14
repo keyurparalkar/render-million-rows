@@ -52,6 +52,10 @@ type WorkerProps = GenerateAndDrawEvent | ScrollEvent;
 
 // ======================== TYPINGS END =========================
 
+/**
+ * This creates a blank offscreen canvas.
+ * @returns OffscreenCanvasSlice | undefined
+ */
 const createBlankOffscreenCanvas = () => {
 	const backupCanvas = new OffscreenCanvas(
 		1800,
@@ -78,6 +82,13 @@ const createBlankOffscreenCanvas = () => {
 	}
 };
 
+/**
+ * @param csvData - actual csv data
+ * @param index - index of the canvas
+ * @param start - index position in csvData from which slicing needs to start
+ * @param end - index position in csvData from which slicing needs to end(exclusive)
+ * @returns OffscreenCanvasSlice | undefined
+ */
 const createOffscreenSlice = (
 	csvData: TCustomData[],
 	index: number,
@@ -119,6 +130,13 @@ const createOffscreenSlice = (
 	}
 };
 
+/**
+ * This functions draws the data from each canvas slice on to the targetCanvas.
+ * It makes use of the divScrollTop to determine the location of data in the canvas slice.
+ * @param targetCanvas - canvas element on which the table needs to be drawn.
+ * @param divScrollTop - scrollTop of the infinite scroll container
+ * @param canvasSlices - canvas slices. Each slice is of dim = 1800 x 5000(i.e. DEFAULT_SLICE_THRESHOLD*DEFAULT_CELL_DIMS.height)
+ */
 const drawOnTargetCanvas = (
 	targetCanvas: OffscreenCanvas | null,
 	divScrollTop: number,
@@ -126,10 +144,13 @@ const drawOnTargetCanvas = (
 ) => {
 	const scrollTop = divScrollTop;
 	const canvas = targetCanvas;
-	const trunScrollTop = Math.trunc(scrollTop / 50);
 
+	// Gets the number of rows scrolled.
+	const truncScrollTop = Math.trunc(scrollTop / 50);
+
+	// We get currentCanvas by comparing truncScrollTop with start and end indices of the current canvas slice
 	let currentCanvasConfig = canvasSlices.filter(
-		(item) => trunScrollTop >= item.start && trunScrollTop <= item.end
+		(item) => truncScrollTop >= item.start && truncScrollTop <= item.end
 	)[0];
 
 	/**
@@ -146,7 +167,7 @@ const drawOnTargetCanvas = (
 				i += DEFAULT_SLICE_THRESHOLD
 			) {
 				const [start, end] = findRangeIndices(
-					trunScrollTop,
+					truncScrollTop,
 					DEFAULT_SLICE_THRESHOLD
 				);
 				const existingCanvas = dataStore.canvasSlices.filter(
@@ -162,6 +183,8 @@ const drawOnTargetCanvas = (
 					);
 					if (newCanvas) {
 						tempSlices.push(newCanvas);
+
+						// Make sure to also update the global dataStore.
 						dataStore.canvasSlices.push(newCanvas);
 					}
 				}
@@ -169,18 +192,24 @@ const drawOnTargetCanvas = (
 			resolve(tempSlices);
 		});
 
+		// On resolve we draw
 		promise.then((data) => {
 			drawOnTargetCanvas(targetCanvas, divScrollTop, data);
 		});
+
 		const blankCanvas = createBlankOffscreenCanvas();
 		if (blankCanvas) currentCanvasConfig = blankCanvas;
 	}
 
+	// We find the canvas limits in terms of scrollHeight i.e. csvData.length * DEFAULT_CELL_DIMS.height
+	// So here the canvasLimits gives us the start and end limit from the scrollheight standpoint for the currentCanvas.
+	// For example, if scrollTop is 5500 the canvasLimits will be [5000, 10000]
 	const canvasLimits = findRangeIndices(
 		scrollTop,
 		DEFAULT_SLICE_THRESHOLD * DEFAULT_CELL_DIMS.height
 	);
 
+	// If it is the first canvas slice then no need of limits
 	const currentCanvasStartScrollOffset =
 		currentCanvasConfig.start === 0 ? 0 : canvasLimits[0];
 
@@ -190,6 +219,10 @@ const drawOnTargetCanvas = (
 		if (context) {
 			context.clearRect(0, 0, 1800, 1000);
 
+			// We start copying the pixel from the currentCanvas to the targetCanvas.
+			// This is called blitting.
+			// Since the targetCanvas is of size 1800 x 1000 therefore during each scroll we make sure that we extract
+			// that amount of portion from the currentCanvas
 			context.drawImage(
 				currentCanvasConfig.canvas,
 				0,
@@ -207,6 +240,12 @@ const drawOnTargetCanvas = (
 					canvas.start === currentCanvasConfig.start + DEFAULT_SLICE_THRESHOLD
 			)[0];
 
+			// There is a scenario that arise during our implementation which is, whenever the currentCanvas is about to finish
+			// then if you scroll down then we see a blank canvas till it current canvas is finished.
+			// This happens so because the above drawImage blitting operation is trying to copy pixels which are out of the range
+			// of the currentCanvas.
+			// To mitigate this I came up with an approach to start drawing the rows of the next canvas. We determine the rows to be
+			// drawn from the next canvas using the below diffRegion
 			if (scrollTop + 1000 >= currentCanvasConfig.canvas.height && nextCanvas) {
 				const diffRegion = {
 					sx: 0,

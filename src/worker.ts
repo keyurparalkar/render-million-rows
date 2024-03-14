@@ -177,13 +177,13 @@ const drawOnTargetCanvas = (
 		if (blankCanvas) currentCanvasConfig = blankCanvas;
 	}
 
-	const canvasEndLimit = findRangeIndices(
+	const canvasLimits = findRangeIndices(
 		scrollTop,
 		DEFAULT_SLICE_THRESHOLD * DEFAULT_CELL_DIMS.height
-	)[0];
+	);
 
-	const previousCanvasEndScrollOffset =
-		currentCanvasConfig.start === 0 ? 0 : canvasEndLimit;
+	const currentCanvasStartScrollOffset =
+		currentCanvasConfig.start === 0 ? 0 : canvasLimits[0];
 
 	if (canvas) {
 		const context = canvas.getContext("2d");
@@ -194,7 +194,7 @@ const drawOnTargetCanvas = (
 			context.drawImage(
 				currentCanvasConfig.canvas,
 				0,
-				scrollTop - previousCanvasEndScrollOffset,
+				scrollTop - currentCanvasStartScrollOffset,
 				1800,
 				1000,
 				0,
@@ -203,34 +203,36 @@ const drawOnTargetCanvas = (
 				1000
 			);
 
-			if (
-				scrollTop + 1000 >= currentCanvasConfig.canvas.height &&
-				canvasSlices[currentCanvasConfig.index + 1]
-			) {
+			const nextCanvas = canvasSlices.filter(
+				(canvas) =>
+					canvas.start === currentCanvasConfig.start + DEFAULT_SLICE_THRESHOLD
+			)[0];
+
+			if (scrollTop + 1000 >= currentCanvasConfig.canvas.height && nextCanvas) {
+				// const diffRegion = {
+				// 	sx: 0,
+				// 	sy: 0,
+				// 	sw: currentCanvasConfig.canvas.width,
+				// 	sh: scrollTop - currentCanvasStartScrollOffset,
+				// 	dx: 0,
+				// 	dy: scrollTop - currentCanvasStartScrollOffset,
+				// 	dw: nextCanvas.canvas.width,
+				// 	dh: scrollTop - currentCanvasStartScrollOffset,
+				// };
+
 				const diffRegion = {
 					sx: 0,
 					sy: 0,
-					sw: currentCanvasConfig.canvas.width,
-					sh:
-						scrollTop +
-						1000 -
-						currentCanvasConfig.canvas.height * (currentCanvasConfig.index + 1),
+					sw: nextCanvas.canvas.width,
+					sh: 1000 - (canvasLimits[1] - scrollTop),
 					dx: 0,
-					dy:
-						1000 -
-						(scrollTop +
-							1000 -
-							currentCanvasConfig.canvas.height *
-								(currentCanvasConfig.index + 1)),
-					dw: currentCanvasConfig.canvas.width,
-					dh:
-						scrollTop +
-						1000 -
-						currentCanvasConfig.canvas.height * (currentCanvasConfig.index + 1),
+					dy: canvasLimits[1] - scrollTop,
+					dw: nextCanvas.canvas.width,
+					dh: 1000 - (canvasLimits[1] - scrollTop),
 				};
 
 				context.drawImage(
-					canvasSlices[currentCanvasConfig.index + 1].canvas,
+					nextCanvas.canvas,
 					diffRegion.sx,
 					diffRegion.sy,
 					diffRegion.sw,

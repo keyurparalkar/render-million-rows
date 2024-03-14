@@ -135,35 +135,38 @@ const drawOnTargetCanvas = (
 
 	/**
 	 * If there is no currentCanvas then add a blank canavas.
-	 * In the mean time we execute a promise that creates 3 offScreencanves.
+	 * In the mean time we execute a promise that creates 2 offScreencanvas.
 	 * When this promise is resolved we draw them on to the canvas.
 	 */
 	if (currentCanvasConfig === undefined) {
 		const promise = new Promise((resolve) => {
-			const [start1, end1] = findRangeIndices(
-				trunScrollTop,
-				DEFAULT_SLICE_THRESHOLD
-			);
-			const [start2, end2] = findRangeIndices(
-				trunScrollTop + DEFAULT_SLICE_THRESHOLD,
-				DEFAULT_SLICE_THRESHOLD
-			);
+			const tempSlices = [];
+			for (
+				let i = 0;
+				i < 2 * DEFAULT_SLICE_THRESHOLD;
+				i += DEFAULT_SLICE_THRESHOLD
+			) {
+				const [start, end] = findRangeIndices(
+					trunScrollTop,
+					DEFAULT_SLICE_THRESHOLD
+				);
+				const existingCanvas = dataStore.canvasSlices.filter(
+					(canvas) => canvas.start === start
+				)[0];
 
-			const tempSlices = [
-				createOffscreenSlice(
-					dataStore.csvData,
-					dataStore.canvasSlices.length + 1,
-					start1,
-					end1
-				),
-				createOffscreenSlice(
-					dataStore.csvData,
-					dataStore.canvasSlices.length + 2,
-					start2,
-					end2
-				),
-			];
-			dataStore.canvasSlices = [...dataStore.canvasSlices, ...tempSlices];
+				if (existingCanvas === undefined) {
+					const newCanvas = createOffscreenSlice(
+						dataStore.csvData,
+						dataStore.canvasSlices.length + 1,
+						start,
+						end
+					);
+					if (newCanvas) {
+						tempSlices.push(newCanvas);
+						dataStore.canvasSlices.push(newCanvas);
+					}
+				}
+			}
 			resolve(tempSlices);
 		});
 

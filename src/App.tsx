@@ -3,12 +3,10 @@ import Papa from "papaparse";
 import styled from "styled-components";
 
 import CustomWorker from "./worker?worker";
-import { CanvasTable } from "./Table";
 import {
 	DEFAULT_CELL_DIMS,
 	DEFAULT_COLUMN_LENGTH,
 	DEFAULT_HEADER_HEIGHT,
-	DEFAULT_SLICE_THRESHOLD,
 } from "./constants";
 
 const CustomerDataColumns = [
@@ -35,13 +33,6 @@ type ContainerDims = {
 
 type TableDims = {
 	[P in keyof ContainerDims as `$table${Capitalize<P>}`]: ContainerDims[P];
-};
-
-type TCanvasConfig = {
-	index: number;
-	start: number;
-	end: number;
-	canvas: OffscreenCanvas;
 };
 
 const StyledContainer = styled.div<ContainerDims>`
@@ -159,6 +150,26 @@ function App() {
 
 	useEffect(() => {
 		const canvas = canvasRef.current;
+		const headerCanvas = headerCanvasRef.current;
+
+		if (headerCanvas) {
+			const headerContext = headerCanvas.getContext("2d");
+			const { width, height } = DEFAULT_CELL_DIMS;
+			const colNames = CustomerDataColumns;
+
+			if (headerContext) {
+				headerContext.strokeStyle = "white";
+				headerContext.font = "bold 18px serif";
+
+				for (let i = 0; i < DEFAULT_COLUMN_LENGTH; i++) {
+					headerContext.fillStyle = "#242424";
+					headerContext.fillRect(i * width, 0, width, height);
+					headerContext.fillStyle = "white";
+					headerContext.strokeRect(i * width, 0, width, height);
+					headerContext.fillText(colNames[i], i * width + 20, height - 10);
+				}
+			}
+		}
 
 		/**
 		 * Once the data is loaded we transfer this data to worker.

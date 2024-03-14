@@ -105,10 +105,9 @@ function App() {
 	const headerCanvasRef = useRef<ElementRef<"canvas">>(null);
 	const [csvData, setCsvData] = useState<TCustomData[] | null>(null);
 	const [isLoading, setIsLoading] = useState(false);
-	const offScreenRef = useRef<TCanvasConfig[] | []>([]);
-	const [dataStartLimit, setDataStartLimit] = useState(0);
-	const [dataEndLimit, setDataEndLimit] = useState(DEFAULT_SLICE_THRESHOLD);
 	const workerRef = useRef<Worker | null>(null);
+	const lastScrollY = useRef(0);
+	const offsetY = useRef(0);
 
 	const handleClick = (url: string) => {
 		setIsLoading(true);
@@ -127,149 +126,39 @@ function App() {
 	};
 
 	const handleOnScroll = (e: React.UIEvent<HTMLDivElement>) => {
-		const scrollTop =
-			e.currentTarget.scrollTop === 0
+		const { clientHeight, scrollTop: elScrollTop } = e.currentTarget;
+
+		const newY =
+			elScrollTop >= 0 && elScrollTop < DEFAULT_HEADER_HEIGHT
 				? 0
-				: e.currentTarget.scrollTop - DEFAULT_HEADER_HEIGHT;
+				: elScrollTop - DEFAULT_HEADER_HEIGHT;
+
+		const scrollHeight = (csvData?.length || 0) * DEFAULT_CELL_DIMS.height;
+
+		const delta = lastScrollY.current - newY;
+		const scrollableHeight = e.currentTarget.scrollHeight - clientHeight;
+		lastScrollY.current = newY;
+
+		if (
+			scrollableHeight > 0 &&
+			(Math.abs(delta) > 2000 || newY === 0 || newY === scrollableHeight) &&
+			scrollHeight > e.currentTarget.scrollHeight + 5
+		) {
+			const prog = newY / scrollableHeight;
+			const recomputed = (scrollHeight - clientHeight) * prog;
+			offsetY.current = recomputed - newY;
+		}
 
 		if (workerRef.current) {
 			workerRef.current.postMessage({
 				type: "scroll",
-				divScrollTop: scrollTop,
+				divScrollTop: newY + offsetY.current,
 			});
 		}
-		// const canvas = canvasRef.current;
-		// const end = dataEndLimit;
-		// /**
-		//  * When the scroll top reaches the 90% of the end limit of dataSetLimits then we increment it by 5000
-		//  */
-		// const trunScrollTop = Math.trunc(scrollTop / 50);
-
-		// if (trunScrollTop >= 0.8 * end) {
-		// 	setDataStartLimit(dataStartLimit + DEFAULT_SLICE_THRESHOLD);
-		// 	setDataEndLimit(dataEndLimit + DEFAULT_SLICE_THRESHOLD);
-		// }
-
-		// const currentCanvasConfig = offScreenRef.current.filter(
-		// 	(item) => trunScrollTop >= item.start && trunScrollTop <= item.end
-		// )[0];
-
-		// const lastScrollOffset =
-		// 	currentCanvasConfig.start === 0
-		// 		? 0
-		// 		: (currentCanvasConfig.end - currentCanvasConfig.start) *
-		// 		  DEFAULT_CELL_DIMS.height *
-		// 		  currentCanvasConfig.index;
-
-		// if (canvas) {
-		// 	const context = canvas.getContext("2d");
-
-		// 	if (context && offScreenRef.current) {
-		// 		context.clearRect(0, 0, 1800, 1000);
-
-		// 		// TODO(Keyur): Solve the problem of canvas redrawing at the same location on mount;
-		// 		context.drawImage(
-		// 			currentCanvasConfig.canvas,
-		// 			0,
-		// 			scrollTop - lastScrollOffset,
-		// 			1800,
-		// 			1000,
-		// 			0,
-		// 			0,
-		// 			1800,
-		// 			1000
-		// 		);
-
-		// 		if (
-		// 			scrollTop + 1000 >= currentCanvasConfig.canvas.height &&
-		// 			offScreenRef.current[currentCanvasConfig.index + 1]
-		// 		) {
-		// 			const diffRegion = {
-		// 				sx: 0,
-		// 				sy: 0,
-		// 				sw: currentCanvasConfig.canvas.width,
-		// 				sh:
-		// 					scrollTop +
-		// 					1000 -
-		// 					currentCanvasConfig.canvas.height *
-		// 						(currentCanvasConfig.index + 1),
-		// 				dx: 0,
-		// 				dy:
-		// 					1000 -
-		// 					(scrollTop +
-		// 						1000 -
-		// 						currentCanvasConfig.canvas.height *
-		// 							(currentCanvasConfig.index + 1)),
-		// 				dw: currentCanvasConfig.canvas.width,
-		// 				dh:
-		// 					scrollTop +
-		// 					1000 -
-		// 					currentCanvasConfig.canvas.height *
-		// 						(currentCanvasConfig.index + 1),
-		// 			};
-
-		// 			context.drawImage(
-		// 				offScreenRef.current[currentCanvasConfig.index + 1].canvas,
-		// 				diffRegion.sx,
-		// 				diffRegion.sy,
-		// 				diffRegion.sw,
-		// 				diffRegion.sh,
-		// 				diffRegion.dx,
-		// 				diffRegion.dy,
-		// 				diffRegion.dw,
-		// 				diffRegion.dh
-		// 			);
-		// 		}
-		// 	}
-		// }
 	};
 
 	useEffect(() => {
 		const canvas = canvasRef.current;
-		// const headerCanvas = headerCanvasRef.current;
-
-		// if (headerCanvas) {
-		// 	const headerContext = headerCanvas.getContext("2d");
-		// 	const { width, height } = DEFAULT_CELL_DIMS;
-		// 	const colNames = CustomerDataColumns;
-
-		// 	if (headerContext) {
-		// 		headerContext.strokeStyle = "white";
-		// 		headerContext.font = "bold 18px serif";
-
-		// 		for (let i = 0; i < DEFAULT_COLUMN_LENGTH; i++) {
-		// 			headerContext.fillStyle = "#242424";
-		// 			headerContext.fillRect(i * width, 0, width, height);
-		// 			headerContext.fillStyle = "white";
-		// 			headerContext.strokeRect(i * width, 0, width, height);
-		// 			headerContext.fillText(colNames[i], i * width + 20, height - 10);
-		// 		}
-		// 	}
-		// }
-
-		// // Effect that paints rows on data load
-		// if (canvas && csvData) {
-		// 	const context = canvas.getContext("2d");
-
-		// 	if (context) {
-		// 		const tableDims = {
-		// 			rows: 20,
-		// 			columns: DEFAULT_COLUMN_LENGTH,
-		// 		};
-
-		// 		const table = new CanvasTable<(typeof csvData)[0]>(
-		// 			context,
-		// 			tableDims,
-		// 			DEFAULT_CELL_DIMS,
-		// 			csvData
-		// 		);
-
-		// 		table.clearTable();
-		// 		table.drawTable();
-		// 		// table.writeTableHeader();
-		// 		table.writeInTable();
-		// 	}
-		// }
 
 		/**
 		 * Once the data is loaded we transfer this data to worker.
@@ -287,58 +176,6 @@ function App() {
 			);
 		}
 	}, [csvData]);
-
-	// Effect that generates new offscreencanvas slice
-	// useEffect(() => {
-	// 	if (csvData) {
-	// 		const start = dataStartLimit;
-	// 		const end = dataEndLimit;
-
-	// 		// Create the slice of csvData:
-	// 		const slicedData = csvData.slice(start, end);
-
-	// 		// While creating next offscreen canvas if the data is not available bail out:
-	// 		if (slicedData.length !== 0) {
-	// 			// We create slices of Offscreen canvas of size 5000
-	// 			const backupCanvas = new OffscreenCanvas(
-	// 				1800,
-	// 				DEFAULT_SLICE_THRESHOLD * DEFAULT_CELL_DIMS.height
-	// 			);
-	// 			const bContext = backupCanvas.getContext("2d");
-
-	// 			const tableDims = {
-	// 				rows: slicedData.length,
-	// 				columns: DEFAULT_COLUMN_LENGTH,
-	// 			};
-
-	// 			if (bContext) {
-	// 				const table = new CanvasTable<(typeof csvData)[0]>(
-	// 					bContext,
-	// 					tableDims,
-	// 					DEFAULT_CELL_DIMS,
-	// 					slicedData
-	// 				);
-
-	// 				table.clearTable();
-	// 				table.drawTable();
-	// 				table.writeInTable();
-	// 				offScreenRef.current = [
-	// 					...offScreenRef.current,
-	// 					{
-	// 						index:
-	// 							offScreenRef.current.length > 0
-	// 								? offScreenRef.current[offScreenRef.current.length - 1]
-	// 										.index + 1
-	// 								: 0,
-	// 						start,
-	// 						end,
-	// 						canvas: backupCanvas,
-	// 					},
-	// 				];
-	// 			}
-	// 		}
-	// 	}
-	// }, [csvData, dataStartLimit, dataEndLimit]);
 
 	useEffect(() => {
 		if (window.Worker) {

@@ -5,6 +5,7 @@ import {
 	DEFAULT_HEADER_HEIGHT,
 	DEFAULT_SLICE_THRESHOLD,
 } from "./constants";
+import { findRangeIndices } from "./utils";
 
 // ======================== TYPINGS START =========================
 type OffscreenCanvasSlice = {
@@ -16,7 +17,7 @@ type OffscreenCanvasSlice = {
 
 type TDataStore = {
 	canvasSlices: OffscreenCanvasSlice[];
-} & Omit<GenerateAndDrawEvent, "type" | "csvData">;
+} & Omit<GenerateAndDrawEvent, "type">;
 
 const CustomerDataColumns = [
 	"Index",
@@ -52,50 +53,71 @@ type WorkerProps = GenerateAndDrawEvent | ScrollEvent;
 
 // ======================== TYPINGS END =========================
 
-const createOffscreenSlices = (csvData: TCustomData[]) => {
-	const offScreenCanvasSlices: OffscreenCanvasSlice[] = [];
+const createBlankOffscreenCanvas = () => {
+	const backupCanvas = new OffscreenCanvas(
+		1800,
+		DEFAULT_SLICE_THRESHOLD * DEFAULT_CELL_DIMS.height
+	);
+	const bContext = backupCanvas.getContext("2d");
 
-	for (let i = 0; i < csvData.length; i += DEFAULT_SLICE_THRESHOLD) {
-		const slicedData = csvData.slice(i, i + DEFAULT_SLICE_THRESHOLD);
+	const tableDims = {
+		rows: DEFAULT_SLICE_THRESHOLD,
+		columns: DEFAULT_COLUMN_LENGTH,
+	};
 
-		// We create slices of Offscreen canvas of size 5000
-		const backupCanvas = new OffscreenCanvas(
-			1800,
-			DEFAULT_SLICE_THRESHOLD * DEFAULT_CELL_DIMS.height
-		);
-		const bContext = backupCanvas.getContext("2d");
+	if (bContext) {
+		const table = new CanvasTable(bContext, tableDims, DEFAULT_CELL_DIMS, []);
 
-		const tableDims = {
-			rows: slicedData.length,
-			columns: DEFAULT_COLUMN_LENGTH,
+		table.drawTable();
+
+		return {
+			index: 0,
+			start: 0,
+			end: DEFAULT_SLICE_THRESHOLD * DEFAULT_CELL_DIMS.height,
+			canvas: backupCanvas,
 		};
-
-		if (bContext) {
-			const table = new CanvasTable<(typeof csvData)[0]>(
-				bContext,
-				tableDims,
-				DEFAULT_CELL_DIMS,
-				slicedData
-			);
-
-			table.clearTable();
-			table.drawTable();
-			table.writeInTable();
-
-			const currentIdx =
-				offScreenCanvasSlices.length > 0
-					? offScreenCanvasSlices[offScreenCanvasSlices.length - 1].index + 1
-					: 0;
-
-			offScreenCanvasSlices.push({
-				index: currentIdx,
-				start: i,
-				end: i + DEFAULT_SLICE_THRESHOLD,
-				canvas: backupCanvas,
-			});
-		}
 	}
-	return offScreenCanvasSlices;
+};
+
+const createOffscreenSlice = (
+	csvData: TCustomData[],
+	index: number,
+	start: number,
+	end: number
+) => {
+	const slicedData = csvData.slice(start, end);
+
+	// We create slices of Offscreen canvas of size 5000
+	const backupCanvas = new OffscreenCanvas(
+		1800,
+		DEFAULT_SLICE_THRESHOLD * DEFAULT_CELL_DIMS.height
+	);
+	const bContext = backupCanvas.getContext("2d");
+
+	const tableDims = {
+		rows: slicedData.length,
+		columns: DEFAULT_COLUMN_LENGTH,
+	};
+
+	if (bContext) {
+		const table = new CanvasTable<(typeof csvData)[0]>(
+			bContext,
+			tableDims,
+			DEFAULT_CELL_DIMS,
+			slicedData
+		);
+
+		table.clearTable();
+		table.drawTable();
+		table.writeInTable();
+
+		return {
+			index,
+			start,
+			end,
+			canvas: backupCanvas,
+		};
+	}
 };
 
 const drawOnTargetCanvas = (
@@ -103,29 +125,62 @@ const drawOnTargetCanvas = (
 	divScrollTop: number,
 	canvasSlices: OffscreenCanvasSlice[]
 ) => {
-	const scrollTop =
-		divScrollTop === 0 ? 0 : divScrollTop - DEFAULT_HEADER_HEIGHT;
+	const scrollTop = divScrollTop;
 	const canvas = targetCanvas;
-	/**
-	 * When the scroll top reaches the 90% of the end limit of dataSetLimits then we increment it by 5000
-	 */
 	const trunScrollTop = Math.trunc(scrollTop / 50);
 
-	// if (trunScrollTop >= 0.8 * end) {
-	// 	setDataStartLimit(dataStartLimit + DEFAULT_SLICE_THRESHOLD);
-	// 	setDataEndLimit(dataEndLimit + DEFAULT_SLICE_THRESHOLD);
-	// }
-
-	const currentCanvasConfig = canvasSlices.filter(
+	let currentCanvasConfig = canvasSlices.filter(
 		(item) => trunScrollTop >= item.start && trunScrollTop <= item.end
 	)[0];
 
-	const lastScrollOffset =
-		currentCanvasConfig.start === 0
-			? 0
-			: (currentCanvasConfig.end - currentCanvasConfig.start) *
-			  DEFAULT_CELL_DIMS.height *
-			  currentCanvasConfig.index;
+	/**
+	 * If there is no currentCanvas then add a blank canavas.
+	 * In the mean time we execute a promise that creates 3 offScreencanves.
+	 * When this promise is resolved we draw them on to the canvas.
+	 */
+	if (currentCanvasConfig === undefined) {
+		const promise = new Promise((resolve) => {
+			const [start1, end1] = findRangeIndices(
+				trunScrollTop,
+				DEFAULT_SLICE_THRESHOLD
+			);
+			const [start2, end2] = findRangeIndices(
+				trunScrollTop + DEFAULT_SLICE_THRESHOLD,
+				DEFAULT_SLICE_THRESHOLD
+			);
+
+			const tempSlices = [
+				createOffscreenSlice(
+					dataStore.csvData,
+					dataStore.canvasSlices.length + 1,
+					start1,
+					end1
+				),
+				createOffscreenSlice(
+					dataStore.csvData,
+					dataStore.canvasSlices.length + 2,
+					start2,
+					end2
+				),
+			];
+			dataStore.canvasSlices = [...dataStore.canvasSlices, ...tempSlices];
+			resolve(tempSlices);
+		});
+
+		promise.then((data) => {
+			drawOnTargetCanvas(targetCanvas, divScrollTop, data);
+		});
+		const blankCanvas = createBlankOffscreenCanvas();
+		if (blankCanvas) currentCanvasConfig = blankCanvas;
+	}
+
+	const canvasEndLimit = findRangeIndices(
+		scrollTop,
+		DEFAULT_SLICE_THRESHOLD * DEFAULT_CELL_DIMS.height
+	)[0];
+
+	const previousCanvasEndScrollOffset =
+		currentCanvasConfig.start === 0 ? 0 : canvasEndLimit;
 
 	if (canvas) {
 		const context = canvas.getContext("2d");
@@ -133,11 +188,10 @@ const drawOnTargetCanvas = (
 		if (context) {
 			context.clearRect(0, 0, 1800, 1000);
 
-			// TODO(Keyur): Solve the problem of canvas redrawing at the same location on mount;
 			context.drawImage(
 				currentCanvasConfig.canvas,
 				0,
-				scrollTop - lastScrollOffset,
+				scrollTop - previousCanvasEndScrollOffset,
 				1800,
 				1000,
 				0,
@@ -191,6 +245,7 @@ const drawOnTargetCanvas = (
 const dataStore: TDataStore = {
 	canvasSlices: [],
 	targetCanvas: null,
+	csvData: [],
 };
 
 onmessage = (e: MessageEvent<WorkerProps>) => {
@@ -200,10 +255,24 @@ onmessage = (e: MessageEvent<WorkerProps>) => {
 		case "generate-data-draw": {
 			const { targetCanvas, csvData } = e.data;
 			if (targetCanvas && csvData) {
-				const canvasSlices = createOffscreenSlices(csvData);
-				dataStore.canvasSlices = canvasSlices;
+				const startingSlices = [
+					createOffscreenSlice(csvData, 0, 0, DEFAULT_SLICE_THRESHOLD),
+					createOffscreenSlice(
+						csvData,
+						1,
+						DEFAULT_SLICE_THRESHOLD,
+						DEFAULT_SLICE_THRESHOLD * 2
+					),
+				];
+				if (startingSlices)
+					dataStore.canvasSlices = [
+						...dataStore.canvasSlices,
+						...startingSlices,
+					];
+
 				dataStore.targetCanvas = targetCanvas;
-				drawOnTargetCanvas(targetCanvas, 0, canvasSlices);
+				dataStore.csvData = csvData;
+				drawOnTargetCanvas(targetCanvas, 0, dataStore.canvasSlices);
 			}
 			break;
 		}
@@ -220,6 +289,4 @@ onmessage = (e: MessageEvent<WorkerProps>) => {
 		default:
 			break;
 	}
-
-	console.log("Outside of onMessage = ", dataStore);
 };

@@ -1,3 +1,5 @@
+import { DEFAULT_COLUMN_LENGTH } from "./constants";
+
 type Cell = {
 	width: number;
 	height: number;
@@ -52,18 +54,6 @@ export class CanvasTable<T extends object> {
 				this.context.strokeRect(j * width, i * height, width, height);
 			}
 		}
-
-		// this.context.drawImage(
-		// 	this.context.canvas,
-		// 	0,
-		// 	0,
-		// 	rows,
-		// 	columns,
-		// 	0,
-		// 	0,
-		// 	1000,
-		// 	400
-		// );
 	}
 
 	writeTableHeader() {
@@ -86,7 +76,7 @@ export class CanvasTable<T extends object> {
 		const tableData = this.data;
 
 		const dataRows = tableData.length;
-		const dataColumns = Object.keys(tableData[0]).length;
+		const dataColumns = DEFAULT_COLUMN_LENGTH;
 
 		let gridStartRow = 1;
 
@@ -99,9 +89,9 @@ export class CanvasTable<T extends object> {
 			for (let j = 0; j < dataColumns; j++) {
 				const rawText = Object.values(tableData[i])[j] as string;
 
-				const truncatedText = `${rawText.slice(0, 5)}...`;
+				const truncatedText = `${rawText.slice(0, 7)}...`;
 
-				const formattedText = rawText.length >= 5 ? truncatedText : rawText;
+				const formattedText = rawText.length >= 7 ? truncatedText : rawText;
 
 				this.context.fillText(
 					formattedText,

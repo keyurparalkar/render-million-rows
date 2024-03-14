@@ -7,6 +7,8 @@ import {
 	DEFAULT_CELL_DIMS,
 	DEFAULT_COLUMN_LENGTH,
 	DEFAULT_HEADER_HEIGHT,
+	DEFAULT_TABLE_CONTAINER_HEIGHT,
+	DEFAULT_TABLE_CONTAINER_WIDTH,
 } from "./constants";
 
 const CustomerDataColumns = [
@@ -261,7 +263,10 @@ function App() {
 				<>
 					{/* Below is a div that serves as container with infinite scroll.
 						We manually assign the width and height to this container and make the content overflow in it by create huge divs. */}
-					<StyledContainer width={2000} height={1000 + DEFAULT_HEADER_HEIGHT}>
+					<StyledContainer
+						width={DEFAULT_TABLE_CONTAINER_WIDTH}
+						height={DEFAULT_TABLE_CONTAINER_HEIGHT + DEFAULT_HEADER_HEIGHT}
+					>
 						<StyledScrollbarContainer
 							id="table-container"
 							onScroll={handleOnScroll}
@@ -280,19 +285,19 @@ function App() {
 									DEFAULT_HEADER_HEIGHT +
 									DEFAULT_CELL_DIMS.height * csvData.length
 								}
-								$containerHeight={1800}
+								$containerHeight={DEFAULT_TABLE_CONTAINER_WIDTH}
 							/>
 						</StyledScrollbarContainer>
 						<StyledCanvas
 							id="header-canvas"
-							width={1800}
+							width={DEFAULT_TABLE_CONTAINER_WIDTH}
 							height={50}
 							ref={headerCanvasRef}
 						></StyledCanvas>
 						<StyledCanvas
 							id="canvas"
-							width={1800}
-							height={1000}
+							width={DEFAULT_TABLE_CONTAINER_WIDTH}
+							height={DEFAULT_TABLE_CONTAINER_HEIGHT}
 							ref={canvasRef}
 						></StyledCanvas>
 					</StyledContainer>

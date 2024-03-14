@@ -3,6 +3,8 @@ import {
 	DEFAULT_CELL_DIMS,
 	DEFAULT_COLUMN_LENGTH,
 	DEFAULT_SLICE_THRESHOLD,
+	DEFAULT_TABLE_CONTAINER_HEIGHT,
+	DEFAULT_TABLE_CONTAINER_WIDTH,
 } from "./constants";
 import { findRangeIndices } from "./utils";
 
@@ -58,7 +60,7 @@ type WorkerProps = GenerateAndDrawEvent | ScrollEvent;
  */
 const createBlankOffscreenCanvas = () => {
 	const backupCanvas = new OffscreenCanvas(
-		1800,
+		DEFAULT_TABLE_CONTAINER_WIDTH,
 		DEFAULT_SLICE_THRESHOLD * DEFAULT_CELL_DIMS.height
 	);
 	const bContext = backupCanvas.getContext("2d");
@@ -99,7 +101,7 @@ const createOffscreenSlice = (
 
 	// We create slices of Offscreen canvas of size 5000
 	const backupCanvas = new OffscreenCanvas(
-		1800,
+		DEFAULT_TABLE_CONTAINER_WIDTH,
 		DEFAULT_SLICE_THRESHOLD * DEFAULT_CELL_DIMS.height
 	);
 	const bContext = backupCanvas.getContext("2d");
@@ -135,7 +137,7 @@ const createOffscreenSlice = (
  * It makes use of the divScrollTop to determine the location of data in the canvas slice.
  * @param targetCanvas - canvas element on which the table needs to be drawn.
  * @param divScrollTop - scrollTop of the infinite scroll container
- * @param canvasSlices - canvas slices. Each slice is of dim = 1800 x 5000(i.e. DEFAULT_SLICE_THRESHOLD*DEFAULT_CELL_DIMS.height)
+ * @param canvasSlices - canvas slices. Each slice is of dim = DEFAULT_TABLE_CONTAINER_WIDTH x 5000(i.e. DEFAULT_SLICE_THRESHOLD*DEFAULT_CELL_DIMS.height)
  */
 const drawOnTargetCanvas = (
 	targetCanvas: OffscreenCanvas | null,
@@ -217,22 +219,27 @@ const drawOnTargetCanvas = (
 		const context = canvas.getContext("2d");
 
 		if (context) {
-			context.clearRect(0, 0, 1800, 1000);
+			context.clearRect(
+				0,
+				0,
+				DEFAULT_TABLE_CONTAINER_WIDTH,
+				DEFAULT_TABLE_CONTAINER_HEIGHT
+			);
 
 			// We start copying the pixel from the currentCanvas to the targetCanvas.
 			// This is called blitting.
-			// Since the targetCanvas is of size 1800 x 1000 therefore during each scroll we make sure that we extract
+			// Since the targetCanvas is of size DEFAULT_TABLE_CONTAINER_WIDTH x DEFAULT_TABLE_CONTAINER_HEIGHT therefore during each scroll we make sure that we extract
 			// that amount of portion from the currentCanvas
 			context.drawImage(
 				currentCanvasConfig.canvas,
 				0,
 				scrollTop - currentCanvasStartScrollOffset,
-				1800,
-				1000,
+				DEFAULT_TABLE_CONTAINER_WIDTH,
+				DEFAULT_TABLE_CONTAINER_HEIGHT,
 				0,
 				0,
-				1800,
-				1000
+				DEFAULT_TABLE_CONTAINER_WIDTH,
+				DEFAULT_TABLE_CONTAINER_HEIGHT
 			);
 
 			const nextCanvas = canvasSlices.filter(
@@ -246,16 +253,20 @@ const drawOnTargetCanvas = (
 			// of the currentCanvas.
 			// To mitigate this I came up with an approach to start drawing the rows of the next canvas. We determine the rows to be
 			// drawn from the next canvas using the below diffRegion
-			if (scrollTop + 1000 >= currentCanvasConfig.canvas.height && nextCanvas) {
+			if (
+				scrollTop + DEFAULT_TABLE_CONTAINER_HEIGHT >=
+					currentCanvasConfig.canvas.height &&
+				nextCanvas
+			) {
 				const diffRegion = {
 					sx: 0,
 					sy: 0,
 					sw: nextCanvas.canvas.width,
-					sh: 1000 - (canvasLimits[1] - scrollTop),
+					sh: DEFAULT_TABLE_CONTAINER_HEIGHT - (canvasLimits[1] - scrollTop),
 					dx: 0,
 					dy: canvasLimits[1] - scrollTop,
 					dw: nextCanvas.canvas.width,
-					dh: 1000 - (canvasLimits[1] - scrollTop),
+					dh: DEFAULT_TABLE_CONTAINER_HEIGHT - (canvasLimits[1] - scrollTop),
 				};
 
 				context.drawImage(

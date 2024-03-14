@@ -2,7 +2,6 @@ import { CanvasTable } from "./Table";
 import {
 	DEFAULT_CELL_DIMS,
 	DEFAULT_COLUMN_LENGTH,
-	DEFAULT_HEADER_HEIGHT,
 	DEFAULT_SLICE_THRESHOLD,
 } from "./constants";
 import { findRangeIndices } from "./utils";
@@ -139,7 +138,7 @@ const drawOnTargetCanvas = (
 	 * When this promise is resolved we draw them on to the canvas.
 	 */
 	if (currentCanvasConfig === undefined) {
-		const promise = new Promise((resolve) => {
+		const promise = new Promise<OffscreenCanvasSlice[]>((resolve) => {
 			const tempSlices = [];
 			for (
 				let i = 0;
@@ -209,17 +208,6 @@ const drawOnTargetCanvas = (
 			)[0];
 
 			if (scrollTop + 1000 >= currentCanvasConfig.canvas.height && nextCanvas) {
-				// const diffRegion = {
-				// 	sx: 0,
-				// 	sy: 0,
-				// 	sw: currentCanvasConfig.canvas.width,
-				// 	sh: scrollTop - currentCanvasStartScrollOffset,
-				// 	dx: 0,
-				// 	dy: scrollTop - currentCanvasStartScrollOffset,
-				// 	dw: nextCanvas.canvas.width,
-				// 	dh: scrollTop - currentCanvasStartScrollOffset,
-				// };
-
 				const diffRegion = {
 					sx: 0,
 					sy: 0,
@@ -260,19 +248,23 @@ onmessage = (e: MessageEvent<WorkerProps>) => {
 		case "generate-data-draw": {
 			const { targetCanvas, csvData } = e.data;
 			if (targetCanvas && csvData) {
-				const startingSlices = [
-					createOffscreenSlice(csvData, 0, 0, DEFAULT_SLICE_THRESHOLD),
-					createOffscreenSlice(
-						csvData,
-						1,
-						DEFAULT_SLICE_THRESHOLD,
-						DEFAULT_SLICE_THRESHOLD * 2
-					),
-				];
-				if (startingSlices)
+				const firstSlice = createOffscreenSlice(
+					csvData,
+					0,
+					0,
+					DEFAULT_SLICE_THRESHOLD
+				);
+				const secondSlice = createOffscreenSlice(
+					csvData,
+					1,
+					DEFAULT_SLICE_THRESHOLD,
+					DEFAULT_SLICE_THRESHOLD * 2
+				);
+				if (firstSlice && secondSlice)
 					dataStore.canvasSlices = [
 						...dataStore.canvasSlices,
-						...startingSlices,
+						firstSlice,
+						secondSlice,
 					];
 
 				dataStore.targetCanvas = targetCanvas;

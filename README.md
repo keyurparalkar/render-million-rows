@@ -2,33 +2,28 @@
 
 This project is a demonstration of how you can render 1 million rows in a table by drawing. I made use of the canvas API to achieve this task.
 
-## Data source
+## Data Source
 
-I took this repository as my data source - https://github.com/datablist/sample-csv-files
-. It contains sample CSV data for range of rows i.e. 0.5M, 1M rows etc.
+I took this repository as my data source - [https://github.com/datablist/sample-csv-files](https://github.com/datablist/sample-csv-files). It contains sample CSV data for a range of rows, i.e., 0.5M, 1M rows, etc.
 
 ## Inspiration
 
-I got inspired to do this project when I was exploring how google sheet is able to render 0.5 million rows. I also got inspired by the glide apps data grid library that helped me understand the concept of canvas drawing: https://github.com/glideapps/glide-data-grid
+I got inspired to do this project when I was exploring how Google Sheets are able to render 0.5 million rows. I also got inspired by the Glide Apps Data Grid library, which helped me understand the concept of canvas drawing: [https://github.com/glideapps/glide-data-grid](https://github.com/glideapps/glide-data-grid).
 
 ## Approach
 
-I took an approach of drawing each and every row of a CSV file on to a target canvas that displays these rows. Once the csv data is loaded, a worker is created that creates an offscreen canvas based on the scroll top value. This offscreen canvas will have a 100 rows drawn on to it.
+I took an approach of drawing each and every row of a CSV file onto a target canvas that displays these rows. Once the CSV data is loaded, a worker is created that creates an offscreen canvas based on the scroll top value. This offscreen canvas will have 100 rows drawn onto it.
 
-I make use of `drawImage` function to blit the rows from offscreen canvas to the target canvas. This happens on every scroll.
+I make use of the `drawImage` function to blit the rows from the offscreen canvas to the target canvas. This happens on every scroll.
 
 Here is a short video that demonstrates ~1 Million rows drawn:
 
-<video controls>
-  <source src="src/assets/1M_rows.mov" type="video/mp4">
-</video>
+[https://github.com/keyurparalkar/render-million-rows/assets/14138515/348a7267-651a-4b47-aa42-9472318effa4](https://github.com/keyurparalkar/render-million-rows/assets/14138515/348a7267-651a-4b47-aa42-9472318effa4)
 
-Also, was able to render ~2 Million rows as well:
+Also, I was able to render ~2 Million rows as well:
 
-<video controls>
-  <source src="src/assets/2M_rows.mov" type="video/mp4">
-</video>
+[https://github.com/keyurparalkar/render-million-rows/assets/14138515/1cf80b9d-bd0c-449c-a0de-0322e1536a7b](https://github.com/keyurparalkar/render-million-rows/assets/14138515/1cf80b9d-bd0c-449c-a0de-0322e1536a7b)
 
 ## Future Enhancement
 
-- Improve the current blitting approach by self blitting the target canvas
+- Improve the current blitting approach by self-blitting the target canvas.

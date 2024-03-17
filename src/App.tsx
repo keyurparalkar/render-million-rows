@@ -28,6 +28,19 @@ type ContainerDims = {
 type TableDims = {
 	[P in keyof ContainerDims as `$table${Capitalize<P>}`]: ContainerDims[P];
 };
+
+type ScrollConfig = {
+	cellTranslateYOffset: number;
+	rowsScrolled: number;
+};
+
+type DrawRegions = {
+	x: number;
+	y: number;
+	height: number;
+	width: number;
+};
+
 const StyledContainer = styled.div<ContainerDims>`
 	position: relative;
 	overflow: hidden;
@@ -80,9 +93,12 @@ const StyledCanvas = styled.canvas`
 
 function App() {
 	const canvasRef = useRef<ElementRef<"canvas">>(null);
-	const canvasRef1 = useRef<ElementRef<"canvas">>(null);
 	const [csvData, setCsvData] = useState<TCustomData[] | null>(null);
 	const [isLoading, setIsLoading] = useState(false);
+	const lastConfig = useRef<ScrollConfig>({
+		cellTranslateYOffset: 0,
+		rowsScrolled: 0,
+	});
 
 	const handleClick = (url: string) => {
 		setIsLoading(true);
@@ -100,63 +116,89 @@ function App() {
 	};
 
 	const handleOnScroll = (e: React.UIEvent<HTMLDivElement>) => {
-		/**
-		 * 1. Clear the first row
-		 * 2. Copy and paste the clipped table to upper position
-		 * 3. Calculate new row position
-		 * 4. Create all the rects to complete the row.
-		 * 5. Fill all the rects to complete the row
-		 */
-		// e.currentTarget.scrollTop = Math.round(e.currentTarget.scrollTop / 50) * 50;
+		const last = lastConfig.current;
+
 		const scrollTop = e.currentTarget.scrollTop;
+		const rowsScrolled = Math.trunc(scrollTop / 50);
+		const cellTranslateYOffset = scrollTop - rowsScrolled * 50;
+		const drawRegions: Array<DrawRegions> = [];
+
+		let deltaY = 0;
+		deltaY += (rowsScrolled - last.rowsScrolled) * 50;
+		if (rowsScrolled > last.rowsScrolled) {
+			deltaY = -deltaY;
+		}
+		console.log({
+			deltaY,
+		});
+		deltaY += cellTranslateYOffset - last.cellTranslateYOffset;
+
+		const blitHeight = 500 - Math.abs(deltaY);
 		const canvas = canvasRef.current;
-		// const canvas1 = canvasRef1.current;
 
 		if (canvas) {
-			const context = canvas.getContext("2d", {
-				willReadFrequently: true,
-			});
+			const context = canvas.getContext("2d");
 			// const context1 = canvas1.getContext("2d");
 
-			console.log({ scrollTop });
 			if (context) {
-				// Slide this image drawing such that only 5 rows are visible all the time
-				// context.drawImage(
-				// 	context1.canvas,
-				// 	0,
-				// 	scrollTop,
-				// 	1800,
-				// 	300,
-				// 	0,
-				// 	0,
-				// 	1800,
-				// 	300
-				// );
-				// 1.
-				// context.translate(0, -50);
-				// context.clearRect(0, 0, canvas.width, 50);
-				const tmp = context.getImageData(0, 50, canvas.width, canvas.height);
+				const args = {
+					sx: 0,
+					sy: 0,
+					sw: 1800,
+					sh: 500,
+					dx: 0,
+					dy: 0,
+					dw: 1800,
+					dh: 500,
+				};
+				if (blitHeight > 100) {
+					if (deltaY < 0) {
+						args.sy = -deltaY;
+						args.sh = blitHeight;
+						args.dy = 0;
+						args.dh = blitHeight;
 
-				context.clearRect(0, 0, canvas.width, canvas.height);
+						drawRegions.push({
+							x: 0,
+							y: 500 + deltaY,
+							width: 1800,
+							height: -deltaY,
+						});
+					}
+				}
+				context.drawImage(
+					context.canvas,
+					args.sx,
+					args.sy,
+					args.sw,
+					args.sh,
+					args.dx,
+					args.dy,
+					args.dw,
+					args.dh
+				);
+				context.fillStyle = "white";
 
-				// 2.
-				context.putImageData(tmp, 0, 0);
+				if (drawRegions.length > 0) {
+					context.beginPath();
+					for (const r of drawRegions) {
+						context.rect(r.x, r.y, r.width, r.height);
+					}
+					context.clip();
+					context.fill();
+					context.beginPath();
+				}
 
-				// context.strokeRect(0, canvas.height - 50, 1800, 50);
-				// // 3.
-				// const newRowPos = {
-				// 	x: 0,
-				// 	y: 250,
-				// 	w: 1800,
-				// 	h: 50,
-				// };
-				// // 4. & 5.
-				// for (let i = 0; i < 12; i++) {
-				// 	context.strokeRect(i * 150, newRowPos.y, 150, 50);
-				// 	context.fillText(`Test - ${i}`, i * 150, newRowPos.y);
-				// }
+				context.lineWidth = 0.2;
+				context.strokeStyle = "white";
+				context.strokeRect(0, 0, 1800, 50);
 			}
 		}
+
+		lastConfig.current = {
+			cellTranslateYOffset,
+			rowsScrolled,
+		};
 	};
 
 	useEffect(() => {
@@ -257,7 +299,7 @@ function App() {
 			{isLoading && <span>Loading...</span>}
 			{csvData && (
 				// TODO(Keyur): Optimize the below code with correct widths and heights that would work for any table.
-				<StyledContainer width={1200} height={300}>
+				<StyledContainer width={1200} height={500}>
 					<StyledScrollbarContainer
 						id="table-container"
 						onScroll={handleOnScroll}
@@ -265,7 +307,7 @@ function App() {
 						<StyledDummyHScroll
 							id="dummy-scrollbar-x"
 							$tableWidth={12 * 150}
-							$containerWidth={300}
+							$containerWidth={500}
 						/>
 						<StyledDummyVScroll
 							id="dummy-scrollbar-y"
@@ -276,7 +318,7 @@ function App() {
 					<StyledCanvas
 						id="canvas"
 						width={1800}
-						height={300}
+						height={500}
 						ref={canvasRef}
 					></StyledCanvas>
 				</StyledContainer>

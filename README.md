@@ -1,6 +1,10 @@
 # Render One Million Rows By Drawing
 
-This project is a demonstration of how you can render 1 million rows in a table by drawing. I made use of the canvas API to achieve this task.
+This project is a demonstration of how you can render 1 million rows in a table by drawing. I made use of the canvas API to achieve this task. 
+I have also demonstrated this project as a part of the talk in Reactjs-pune meetup. Details about the talk can be found below:
+* Slides - [Render Million Rows.pdf](https://github.com/keyurparalkar/render-million-rows/files/15064694/Render.Million.Rows.pdf)
+* [Talk](https://www.meetup.com/reactjs-and-friends/events/299595472/)
+
 
 ## Data Source
 
